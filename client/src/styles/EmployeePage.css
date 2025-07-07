@@ -1,0 +1,7 @@
+.employee-cont{
+    position: absolute;
+    width: calc(100vw - 240px);
+    top: 0;
+    left: 240px;
+    padding: 30px;
+}
