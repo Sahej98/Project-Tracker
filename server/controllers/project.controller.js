@@ -17,6 +17,11 @@ const getProjects = async (req, res) => {
   }
 };
 
+const getProjectById = async (req, res) => {
+  const project = await Project.findById(req.params.id).populate("clientId assignedTo");
+  res.json(project);
+}
+
 // Create a new project
 const createProject = async (req, res) => {
   try {
@@ -52,6 +57,7 @@ const deleteProject = async (req, res) => {
 
 module.exports = {
   getProjects,
+  getProjectById,
   createProject,
   updateProject,
   deleteProject,

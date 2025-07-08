@@ -22,6 +22,7 @@ const registerUser = async (req, res) => {
       email,
       password: hashed,
       role,
+      status: "active",
     });
 
     res.status(201).json({ message: "User registered successfully" });
@@ -36,12 +37,20 @@ const loginUser = async (req, res) => {
   try {
     const { identifier, password } = req.body;
 
-    // identifier can be username or email
     const user = await User.findOne({
       $or: [{ username: identifier }, { email: identifier }],
     });
 
-    if (!user || !(await bcrypt.compare(password, user.password))) {
+    if (!user) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    if (user.status !== "active") {
+      return res.status(403).json({ error: "Account is inactive" });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 

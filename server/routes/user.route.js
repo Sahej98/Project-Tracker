@@ -1,15 +1,12 @@
-// routes/user.route.js
-const router = require("express").Router();
-const User = require("../models/user.model");
+const express = require("express");
+const adminController = require("../controllers/user.controller");
 const auth = require("../middlewares/auth.middleware");
+const router = express.Router();
 
-// return only employees and clients
-router.get("/", auth(["admin", "manager"]), async (req, res) => {
-  const users = await User.find({}, "username _id role fullname");
-  const employees = users.filter(u => u.role === "employee");
-  const clients = users.filter(u => u.role === "client");
-
-  res.json({ employees, clients });
-});
+// Only admin access
+router.get("/", auth(["admin"]), adminController.getUsers);
+router.post("/", auth(["admin"]), adminController.createUser);
+router.put("/:id", auth(["admin"]), adminController.updateUser);
+router.delete("/:id", auth(["admin"]), adminController.deleteUser);
 
 module.exports = router;

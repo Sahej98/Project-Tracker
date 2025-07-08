@@ -1,0 +1,55 @@
+.navbar {
+  height: 10vh;
+  background-color: #ffffff;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 24px;
+  margin: 7px 7px 7px 0;
+  border: 0.5px solid rgba(0, 0, 0, 0.2);
+  position: fixed;
+  top: 0;
+  left: 244px; /* match your sidebar width */
+  right: 0;
+  z-index: 100;
+}
+
+/* Title on the left */
+.navbar h3 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: #333;
+}
+
+/* Right section: search + profile */
+.pfp {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Search box */
+.pfp input[type="text"] {
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  background-color: white;
+  transition: border 0.2s;
+}
+
+.pfp input[type="text"]:focus {
+  border-color: #2c7be5;
+}
+
+/* Profile image placeholder */
+.pfp img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  background-color: #ccc; /* fallback color */
+}
