@@ -1,14 +1,30 @@
-// src/components/MainLayout.jsx
+import HeaderMobileToggle from "./HeaderMobileToggle";
 import Sidebar from "./Sidebar";
 
 export default function MainLayout({ children }) {
   return (
-    <div className="d-flex min-vh-100">
+    <>
+      <HeaderMobileToggle />
       <Sidebar />
 
-      <div className="flex-grow-1">
-        <div className="p-3">{children}</div>
+      {/* Wrap content in a container with responsive margin */}
+      <div
+        className="min-vh-100"
+        style={{
+          marginLeft: 0,
+        }}
+      >
+        <div
+          className="p-3"
+          style={{
+            // Apply left margin only on medium screens and up
+            marginLeft: window.innerWidth >= 768 ? "220px" : "0",
+            transition: "margin-left 0.3s ease",
+          }}
+        >
+          {children}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

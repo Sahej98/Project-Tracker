@@ -11,7 +11,7 @@ export default function DisplayManagerPage() {
     const fetchManager = async () => {
       try {
         const res = await api.get("/users");
-        const foundManager = res.data.managers.find((m) => m._id === id);
+        const foundManager = res.data.managers.find((c) => c._id === id);
         if (foundManager) {
           setManager(foundManager);
         } else {
@@ -39,54 +39,53 @@ export default function DisplayManagerPage() {
     navigate(`/edit-manager/${id}`);
   };
 
+  const handleCancel = () => {
+    navigate(-1); // Go back to the previous page
+  };
+
   if (!manager) {
     return (
-      <div className="container mt-5">
-        <div className="alert alert-info">Loading manager details...</div>
+      <div className="container mt-4">
+        <p>Loading manager details...</p>
       </div>
     );
   }
 
   return (
-    <div className="container mt-5">
-      <div className="card shadow-sm">
-        <div className="card-header">
-          <h4 className="mb-0">Manager Information</h4>
+    <div className="container-fluid py-2" style={{ backgroundColor: "#f8f9fa"}}>
+      <div className="bg-white shadow-sm rounded-4 p-4 w-100 card shadow">
+        <h3 className="mb-4 border-bottom pb-2">Manager Details</h3>
+
+        <DetailRow label="Full Name" value={manager.fullname} />
+        <DetailRow label="Username" value={manager.username} />
+        <DetailRow label="Email" value={manager.email || "N/A"} />
+        <DetailRow
+          label="Status"
+          value={
+            <span className={`badge px-3 py-1 bg-${manager.status === "active" ? "success" : "secondary"}`}>
+              {manager.status}
+            </span>
+          }
+        />
+
+        <div className="d-flex justify-content-end gap-2 mt-4 flex-wrap">
+          <button className="btn btn-outline-secondary" onClick={handleCancel}>Cancel</button>
+          <button className="btn btn-outline-primary" onClick={handleEdit}>Edit</button>
+          <button className="btn btn-outline-danger" onClick={handleDelete}>Delete</button>
         </div>
-        <div className="card-body">
-          <div className="mb-3 row">
-            <label className="col-sm-2 col-form-label fw-bold">Full Name:</label>
-            <div className="col-sm-10">{manager.fullname}</div>
-          </div>
-          <div className="mb-3 row">
-            <label className="col-sm-2 col-form-label fw-bold">Username:</label>
-            <div className="col-sm-10">{manager.username}</div>
-          </div>
-          <div className="mb-3 row">
-            <label className="col-sm-2 col-form-label fw-bold">Email:</label>
-            <div className="col-sm-10">{manager.email}</div>
-          </div>
-          <div className="mb-3 row">
-            <label className="col-sm-2 col-form-label fw-bold">Status:</label>
-            <div className="col-sm-10">
-              <span
-                className={`badge ${
-                  manager.status === "active" ? "bg-success" : "bg-secondary"
-                }`}
-              >
-                {manager.status || "active"}
-              </span>
-            </div>
-          </div>
-        </div>
-        <div className="card-footer d-flex gap-2 justify-content-end">
-          <button className="btn btn-warning" onClick={handleEdit}>
-            Edit
-          </button>
-          <button className="btn btn-danger" onClick={handleDelete}>
-            Delete
-          </button>
-        </div>
+      </div>
+    </div>
+  );
+}
+
+function DetailRow({ label, value }) {
+  return (
+    <div className="row mb-3">
+      <div className="col-sm-6 text-start">
+        <small className="text-muted">{label}</small>
+      </div>
+      <div className="col-sm-6 text-end fw-semibold text-dark">
+        {value}
       </div>
     </div>
   );

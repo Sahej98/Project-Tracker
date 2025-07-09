@@ -1,12 +1,14 @@
 const express = require("express");
-const adminController = require("../controllers/user.controller");
-const auth = require("../middlewares/auth.middleware");
 const router = express.Router();
+const userController = require("../controllers/user.controller");
 
-// Only admin access
-router.get("/", auth(["admin"]), adminController.getUsers);
-router.post("/", auth(["admin"]), adminController.createUser);
-router.put("/:id", auth(["admin"]), adminController.updateUser);
-router.delete("/:id", auth(["admin"]), adminController.deleteUser);
+// Shared user endpoints
+router.get("/", userController.getAllUsers);
+router.post("/", userController.createUser);
+router.put("/:id", userController.updateUser);
+router.delete("/:id", userController.deleteUser);
+
+// Get users by role: /users/role/employee, /users/role/manager, etc.
+router.get("/role/:role", userController.getUsersByRole);
 
 module.exports = router;

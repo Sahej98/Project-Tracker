@@ -27,12 +27,13 @@ export default function Sidebar() {
     navigate("/login");
   };
 
-  const sidebarClass = `col-md-2 d-none d-md-flex flex-column bg-light border-end p-3 vh-100 sidebar`;
-
   return (
     <>
-      {/* Desktop Sidebar */}
-      <div className={sidebarClass}>
+      {/* Fixed Desktop Sidebar */}
+      <div
+        className="d-none d-md-flex flex-column position-fixed top-0 start-0 vh-100 bg-light border-end p-3"
+        style={{ width: "220px", zIndex: 1030 }}
+      >
         <h4 className="mb-4 text-primary">Project Tracker</h4>
         <nav className="nav flex-column gap-2 flex-grow-1">
           {navItems.map(({ to, icon, label, match }) => (
@@ -57,7 +58,7 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* Mobile Sidebar (Offcanvas) */}
+      {/* Mobile Offcanvas Sidebar */}
       <div
         className={`offcanvas offcanvas-start ${isOpen ? "show" : ""}`}
         style={{ visibility: isOpen ? "visible" : "hidden", zIndex: 1045 }}
@@ -87,7 +88,7 @@ export default function Sidebar() {
             ))}
           </nav>
           <div className="mt-auto pt-3 border-top">
-            <button onClick={handleLogout} className="btn btn-outline-secondary w-100">
+            <button onClick={handleLogout} className="btn btn-outline-danger w-100">
               Logout
             </button>
           </div>

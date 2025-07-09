@@ -29,6 +29,7 @@ export default function AddEmployeePage() {
     <div className="container-fluid mt-4">
       <div className="mx-auto" style={{ maxWidth: "960px" }}>
         <h2 className="mb-4">Add Employee</h2>
+
         <form onSubmit={handleSubmit} className="bg-white border rounded shadow-sm p-4">
           <div className="row">
             <div className="col-md-6 mb-3">
@@ -98,7 +99,13 @@ export default function AddEmployeePage() {
 
           <div className="d-flex justify-content-end gap-2">
             <button type="submit" className="btn btn-success">Add Employee</button>
-            <button type="button" className="btn btn-secondary" onClick={() => navigate(-1)}>Cancel</button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => navigate(-1)}
+            >
+              Cancel
+            </button>
           </div>
         </form>
       </div>

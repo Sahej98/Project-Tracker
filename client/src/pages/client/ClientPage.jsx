@@ -30,26 +30,27 @@ export default function ClientPage() {
   return (
     <div className="container-fluid py-3 px-1 px-md-5">
       {/* Header */}
-      <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
-        <h2 className="fw-semibold mb-0 text-dark">Clients</h2>
+      <div className="mb-4">
+        <h2 className="fw-semibold text-dark mb-3">Clients</h2>
 
-        {/* Right-side actions */}
-        <div className="d-flex gap-2 align-items-stretch ms-md-auto">
-          <input
-            type="text"
-            className="form-control"
-            style={{ maxWidth: "300px" }}
-            placeholder="Search clients by name..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <button
-            className="btn btn-primary px-4"
-            style={{ whiteSpace: "nowrap" }}
-            onClick={() => navigate("/add-client")}
-          >
-            + Add Client
-          </button>
+        <div className="row g-2">
+          <div className="col-md-4">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Search clients by name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="col-md-8 text-md-end">
+            <button
+              className="btn btn-primary px-4"
+              onClick={() => navigate("/add-client")}
+            >
+              + Add Client
+            </button>
+          </div>
         </div>
       </div>
 
@@ -57,7 +58,7 @@ export default function ClientPage() {
       {filteredClients.length === 0 ? (
         <p className="text-muted text-center">No clients found.</p>
       ) : (
-        <div className="d-flex flex-column gap-3 p-2">
+        <div className="d-flex flex-column gap-3">
           {filteredClients.map((client) => (
             <div
               key={client._id}

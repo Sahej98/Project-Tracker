@@ -6,6 +6,8 @@ const cors = require("cors");
 const authRoutes = require("./routes/auth.route");
 const projectRoutes = require("./routes/project.route");
 const userRoutes = require("./routes/user.route");
+const taskRoutes = require("./routes/task.route");
+
 
 const app = express();
 app.use(cors());
@@ -16,6 +18,7 @@ mongoose.connect(process.env.MONGO_URI).then(() => console.log("MongoDB connecte
 app.use("/api/auth", authRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/tasks", taskRoutes);
 
 
 const PORT = process.env.PORT || 5000;

@@ -1,18 +1,40 @@
 const User = require("../models/user.model");
 
-// Get all employees and clients
-const getUsers = async (req, res) => {
-  const users = await User.find({}, "username _id role fullname email status");
-  const employees = users.filter(u => u.role === "employee");
-  const clients = users.filter(u => u.role === "client");
-  res.json({ employees, clients });
+// Get users by role
+const getUsersByRole = async (req, res) => {
+  try {
+    const role = req.params.role;
+    if (!["employee", "manager", "client"].includes(role)) {
+      return res.status(400).json({ error: "Invalid role" });
+    }
+
+    const users = await User.find({ role }, "username _id role fullname email status");
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch users", details: err.message });
+  }
 };
 
+// Get all users (for admin dashboard)
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({}, "username _id role fullname email status");
+    const employees = users.filter(u => u.role === "employee");
+    const clients = users.filter(u => u.role === "client");
+    const managers = users.filter(u => u.role === "manager");
+    res.json({ employees, clients, managers });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch users", details: err.message });
+  }
+};
 
-// Create user
+// Create user (can be used for employee, client, or manager)
 const createUser = async (req, res) => {
   try {
     const { fullname, username, email, password, role, status = "active" } = req.body;
+    if (!["employee", "manager", "client"].includes(role)) {
+      return res.status(400).json({ error: "Invalid role" });
+    }
 
     const newUser = await User.create({
       fullname,
@@ -28,7 +50,6 @@ const createUser = async (req, res) => {
     res.status(400).json({ error: "User creation failed", details: err.message });
   }
 };
-
 
 // Update user
 const updateUser = async (req, res) => {
@@ -51,7 +72,8 @@ const deleteUser = async (req, res) => {
 };
 
 module.exports = {
-  getUsers,
+  getUsersByRole,
+  getAllUsers,
   createUser,
   updateUser,
   deleteUser,

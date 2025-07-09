@@ -1,49 +1,90 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../axios";
-import "bootstrap/dist/css/bootstrap.min.css";
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortOption, setSortOption] = useState("");
   const navigate = useNavigate();
 
-  const fetchProjects = async () => {
-    try {
-      const res = await api.get("/projects");
-      setProjects(res.data || []);
-    } catch (err) {
-      console.error("Failed to fetch projects", err);
-    }
-  };
-
   useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const res = await api.get("/projects");
+        setProjects(res.data || []);
+      } catch (err) {
+        console.error("Failed to fetch projects", err);
+      }
+    };
     fetchProjects();
   }, []);
 
-  const filteredProjects = projects.filter((project) =>
-    project.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleReset = () => {
+    setSearchTerm("");
+    setSortOption("");
+  };
+
+  const filteredProjects = projects
+    .filter((project) =>
+      project.title.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => {
+      switch (sortOption) {
+        case "priority":
+          return (a.priority || "").localeCompare(b.priority || "");
+        case "deadline":
+          return new Date(a.deadline) - new Date(b.deadline);
+        case "category":
+          return (a.category || "").localeCompare(b.category || "");
+        case "status":
+          return (a.status || "").localeCompare(b.status || "");
+        default:
+          return 0;
+      }
+    });
 
   const openProjectDetails = (id) => {
     navigate(`/display-project/${id}`);
   };
 
   return (
-    <div className="container py-4">
-      <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-        <h2 className="mb-0">Projects</h2>
-        <div className="d-flex gap-2 flex-wrap">
+    <div className="container-fluid py-4 px-1 px-md-5">
+      {/* Page Title */}
+      <h2 className="fw-semibold mb-3 text-dark">Projects</h2>
+
+      {/* Controls Section */}
+      <div className="row align-items-end mb-4">
+        {/* Left side: Search + Sort */}
+        <div className="col-md-6 d-flex flex-column flex-md-row gap-2">
           <input
             type="text"
             className="form-control"
-            placeholder="Search by title..."
+            placeholder="Search projects by title..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ minWidth: "200px" }}
           />
+
+          <select
+            className="form-select"
+            value={sortOption}
+            onChange={(e) => setSortOption(e.target.value)}
+          >
+            <option value="">Sort by</option>
+            <option value="priority">Priority</option>
+            <option value="deadline">Deadline</option>
+            <option value="category">Category</option>
+            <option value="status">Progress</option>
+          </select>
+        </div>
+
+        {/* Right side: Buttons */}
+        <div className="col-md-6 d-flex justify-content-md-end gap-2 mt-3 mt-md-0">
+          <button className="btn btn-outline-secondary" onClick={handleReset}>
+            Reset
+          </button>
           <button
-            className="btn btn-primary"
+            className="btn btn-primary px-4"
             onClick={() => navigate("/add-project")}
           >
             + Add Project
@@ -51,31 +92,39 @@ export default function ProjectsPage() {
         </div>
       </div>
 
-      <div className="row g-3">
-        {filteredProjects.length > 0 ? (
-          filteredProjects.map((project) => (
+      {/* Projects List */}
+      {filteredProjects.length === 0 ? (
+        <p className="text-muted text-center">No projects found.</p>
+      ) : (
+        <div className="d-flex flex-column gap-3">
+          {filteredProjects.map((project) => (
             <div
               key={project._id}
-              className="col-12 col-sm-6 col-md-4 col-lg-3"
+              className="card shadow-sm p-3 d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between cursor-pointer"
+              style={{ cursor: "pointer" }}
+              onClick={() => openProjectDetails(project._id)}
             >
-              <div
-                className="card h-100 shadow-sm cursor-pointer"
-                style={{ cursor: "pointer" }}
-                onClick={() => openProjectDetails(project._id)}
-              >
-                <div className="card-body">
-                  <h5 className="card-title">{project.title}</h5>
-                  <p className="card-text text-muted mb-0">
-                    {project.category} | {project.priority}
-                  </p>
-                </div>
+              <div className="mb-2 mb-md-0">
+                <h5 className="mb-1">{project.title}</h5>
+                <p className="mb-0 text-muted small">
+                  {project.category} | Priority: {project.priority}
+                </p>
               </div>
+              <span
+                className={`badge bg-${
+                  project.status === "completed"
+                    ? "success"
+                    : project.status === "in progress"
+                    ? "warning"
+                    : "secondary"
+                } px-3 py-2 text-capitalize`}
+              >
+                {project.status || "Unknown"}
+              </span>
             </div>
-          ))
-        ) : (
-          <p className="text-muted">No projects found.</p>
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

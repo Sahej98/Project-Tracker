@@ -17,7 +17,7 @@ export default function EditManagerPage() {
     async function fetchManager() {
       try {
         const res = await api.get("/users");
-        const manager = res.data.managers.find((m) => m._id === id);
+        const manager = res.data.managers.find((c) => c._id === id);
         if (manager) {
           setFormData({
             fullname: manager.fullname,
@@ -50,63 +50,68 @@ export default function EditManagerPage() {
   };
 
   return (
-    <div className="container mt-5">
+    <div className="container mt-4">
       <h2 className="mb-4">Edit Manager</h2>
-      <form onSubmit={handleSubmit} className="card shadow-sm p-4">
+      <form onSubmit={handleSubmit} className="card shadow p-4">
         <div className="row mb-3">
-          <div className="col-md-6 mb-3 mb-md-0">
+          <div className="col-md-6 mb-3">
+            <label className="form-label">Full Name</label>
             <input
               name="fullname"
+              className="form-control"
               placeholder="Full Name"
               value={formData.fullname}
               onChange={handleChange}
               required
-              className="form-control"
             />
           </div>
-          <div className="col-md-6">
+          <div className="col-md-6 mb-3">
+            <label className="form-label">Username</label>
             <input
               name="username"
+              className="form-control"
               placeholder="Username"
               value={formData.username}
               onChange={handleChange}
               required
-              className="form-control"
             />
           </div>
         </div>
 
         <div className="row mb-3">
-          <div className="col-md-6 mb-3 mb-md-0">
+          <div className="col-md-6 mb-3">
+            <label className="form-label">Email</label>
             <input
-              name="email"
               type="email"
+              name="email"
+              className="form-control"
               placeholder="Email"
               value={formData.email}
               onChange={handleChange}
               required
-              className="form-control"
             />
           </div>
-          <div className="col-md-6">
+          <div className="col-md-6 mb-3">
+            <label className="form-label">New Password (optional)</label>
             <input
-              name="password"
               type="password"
-              placeholder="New Password (leave blank to keep current)"
+              name="password"
+              className="form-control"
+              placeholder="Leave blank to keep current password"
               value={formData.password}
               onChange={handleChange}
-              className="form-control"
             />
           </div>
         </div>
 
-        <div className="mb-3">
+        <div className="mb-4">
+          <label className="form-label">Status</label>
           <select
             name="status"
+            className="form-select"
             value={formData.status}
             onChange={handleChange}
             required
-            className="form-select"
           >
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
@@ -114,9 +119,7 @@ export default function EditManagerPage() {
         </div>
 
         <div className="d-flex justify-content-end gap-2">
-          <button type="submit" className="btn btn-success">
-            Update Manager
-          </button>
+          <button type="submit" className="btn btn-success">Update Manager</button>
           <button
             type="button"
             className="btn btn-secondary"

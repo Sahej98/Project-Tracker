@@ -19,53 +19,70 @@ export default function ManagerPage() {
     fetchManagers();
   }, []);
 
-  const openManagerDetails = (id) => {
-    navigate(`/display-manager/${id}`);
-  };
-
   const filteredManagers = managers.filter((manager) =>
     manager.fullname.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const openManagerDetails = (id) => {
+    navigate(`/display-manager/${id}`);
+  };
+
   return (
-    <div className="container mt-4">
-      <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
-        <h2 className="mb-3 mb-md-0">Managers</h2>
-        <div className="d-flex gap-2 w-100 w-md-auto">
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Search by name..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <button
-            className="btn btn-primary"
-            onClick={() => navigate("/add-manager")}
-          >
-            + Add Manager
-          </button>
+    <div className="container-fluid py-3 px-1 px-md-5">
+      {/* Header */}
+      <div className="mb-4">
+        <h2 className="fw-semibold text-dark mb-3">Managers</h2>
+
+        <div className="row g-2">
+          <div className="col-md-4">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Search managers by name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="col-md-8 text-md-end">
+            <button
+              className="btn btn-primary px-4"
+              onClick={() => navigate("/add-manager")}
+            >
+              + Add Manager
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="row">
-        {filteredManagers.map((manager) => (
-          <div key={manager._id} className="col-12 col-md-6 col-lg-4 mb-4">
+      {/* Managers List */}
+      {filteredManagers.length === 0 ? (
+        <p className="text-muted text-center">No managers found.</p>
+      ) : (
+        <div className="d-flex flex-column gap-3">
+          {filteredManagers.map((manager) => (
             <div
-              className="card h-100 shadow-sm cursor-pointer"
-              role="button"
+              key={manager._id}
+              className="d-flex card shadow flex-column flex-md-row align-items-start align-items-md-center justify-content-between p-3 rounded shadow-sm bg-white hover-shadow transition"
+              style={{ cursor: "pointer" }}
               onClick={() => openManagerDetails(manager._id)}
             >
-              <div className="card-body">
-                <h5 className="card-title mb-0">{manager.fullname}</h5>
+              <div className="mb-2 mb-md-0">
+                <h5 className="mb-1">{manager.fullname}</h5>
+                <p className="mb-0 text-muted small">
+                  {manager.email || "No email provided"}
+                </p>
               </div>
+              <span
+                className={`badge bg-${
+                  manager.status === "active" ? "success" : "secondary"
+                } px-3 py-2 text-capitalize`}
+              >
+                {manager.status}
+              </span>
             </div>
-          </div>
-        ))}
-        {filteredManagers.length === 0 && (
-          <p className="text-muted">No managers found.</p>
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

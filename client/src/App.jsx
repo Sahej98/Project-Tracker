@@ -21,6 +21,9 @@ import AddProjectPage from "./pages/project/AddProjectPage";
 import EditProjectPage from "./pages/project/EditProjectPage";
 import DisplayProjectPage from "./pages/project/DisplayProjectPage";
 
+// Task Pages
+import AddTaskPage from "./pages/task/AddTaskPage";
+
 // Client Pages
 import ClientPage from "./pages/client/ClientPage";
 import AddClientPage from "./pages/client/AddClientPage";
@@ -146,6 +149,18 @@ function App() {
               <ProtectedRoute>
                 <MainLayout>
                   <EditProjectPage />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Task Management */}
+          <Route
+            path="/add-task/:projectId"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <AddTaskPage />
                 </MainLayout>
               </ProtectedRoute>
             }

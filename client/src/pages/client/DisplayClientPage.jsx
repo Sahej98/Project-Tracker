@@ -80,9 +80,13 @@ export default function DisplayClientPage() {
 
 function DetailRow({ label, value }) {
   return (
-    <div className="mb-3">
-      <small className="text-muted">{label}</small>
-      <div className="fw-semibold text-dark">{value}</div>
+    <div className="row mb-3">
+      <div className="col-sm-6 text-start">
+        <small className="text-muted">{label}</small>
+      </div>
+      <div className="col-sm-6 text-end fw-semibold text-dark">
+        {value}
+      </div>
     </div>
   );
 }
