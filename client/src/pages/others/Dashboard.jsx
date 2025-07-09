@@ -28,8 +28,11 @@ export default function Dashboard() {
   }, [role, navigate]);
 
   return (
-    <div className="container">
-      <p>Redirecting to your dashboard...</p>
+    <div className="container d-flex flex-column justify-content-center align-items-center vh-100">
+      <div className="text-center">
+        <div className="spinner-border text-primary mb-3" role="status" aria-hidden="true"></div>
+        <p className="mb-0">Redirecting to your dashboard...</p>
+      </div>
     </div>
   );
 }

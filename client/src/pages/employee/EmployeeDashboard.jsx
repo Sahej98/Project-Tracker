@@ -1,4 +1,3 @@
-import "../../styles/employee/EmployeeDashboard.css";
 
 export default function EmployeeDashboard() {
   return (

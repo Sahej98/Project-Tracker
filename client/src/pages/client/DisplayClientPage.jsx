@@ -1,26 +1,28 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../axios";
-import "../../styles/client/DisplayClientPage.css";
 
 export default function DisplayClientPage() {
   const { id } = useParams();
   const [client, setClient] = useState(null);
   const navigate = useNavigate();
 
-  const fetchClient = async () => {
-    try {
-      const res = await api.get("/users");
-      const foundClient = res.data.clients.find((c) => c._id === id);
-      if (foundClient) {
-        setClient(foundClient);
-      } else {
-        console.error("Client not found");
+  useEffect(() => {
+    const fetchClient = async () => {
+      try {
+        const res = await api.get("/users");
+        const foundClient = res.data.clients.find((c) => c._id === id);
+        if (foundClient) {
+          setClient(foundClient);
+        } else {
+          console.error("Client not found");
+        }
+      } catch (err) {
+        console.error("Error fetching client", err);
       }
-    } catch (err) {
-      console.error("Error fetching client", err);
-    }
-  };
+    };
+    fetchClient();
+  }, [id]);
 
   const handleDelete = async () => {
     if (window.confirm("Are you sure you want to delete this client?")) {
@@ -37,39 +39,50 @@ export default function DisplayClientPage() {
     navigate(`/edit-client/${id}`);
   };
 
-  useEffect(() => {
-    fetchClient();
-  }, []);
+  const handleCancel = () => {
+    navigate(-1); // Go back to the previous page
+  };
 
-  if (!client) return <p className="loading">Loading client details...</p>;
+  if (!client) {
+    return (
+      <div className="container mt-4">
+        <p>Loading client details...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="display-client-container">
-      <div className="display-client-card">
-        <h2 className="card-title">Client Information</h2>
-        <div className="card-body">
-          <div className="info-row">
-            <span className="label">Full Name:</span>
-            <span className="value">{client.fullname}</span>
-          </div>
-          <div className="info-row">
-            <span className="label">Username:</span>
-            <span className="value">{client.username}</span>
-          </div>
-          <div className="info-row">
-            <span className="label">Email:</span>
-            <span className="value">{client.email}</span>
-          </div>
-          <div className="info-row">
-            <span className="label">Status:</span>
-            <span className={`value ${client.status}`}>{client.status || "active"}</span>
-          </div>
-        </div>
-        <div className="action-buttons">
-          <button className="edit-btn" onClick={handleEdit}>Edit</button>
-          <button className="delete-btn" onClick={handleDelete}>Delete</button>
+    <div className="container-fluid py-2" style={{ backgroundColor: "#f8f9fa"}}>
+      <div className="bg-white shadow-sm rounded-4 p-4 w-100 card shadow">
+        <h3 className="mb-4 border-bottom pb-2">Client Details</h3>
+
+        <DetailRow label="Full Name" value={client.fullname} />
+        <DetailRow label="Username" value={client.username} />
+        <DetailRow label="Email" value={client.email || "N/A"} />
+        <DetailRow
+          label="Status"
+          value={
+            <span className={`badge px-3 py-1 bg-${client.status === "active" ? "success" : "secondary"}`}>
+              {client.status}
+            </span>
+          }
+        />
+
+        <div className="d-flex justify-content-end gap-2 mt-4 flex-wrap">
+          <button className="btn btn-outline-secondary" onClick={handleCancel}>Cancel</button>
+          <button className="btn btn-outline-primary" onClick={handleEdit}>Edit</button>
+          <button className="btn btn-outline-danger" onClick={handleDelete}>Delete</button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function DetailRow({ label, value }) {
+  return (
+    <div className="mb-3">
+      <small className="text-muted">{label}</small>
+      <div className="fw-semibold text-dark">{value}</div>
     </div>
   );
 }

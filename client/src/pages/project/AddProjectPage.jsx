@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../../axios";
-import "../../styles/project/ProjectForm.css";
+import "bootstrap/dist/css/bootstrap.min.css";
 
 export default function EditProjectPage() {
   const { id } = useParams();
@@ -59,45 +59,54 @@ export default function EditProjectPage() {
   };
 
   return (
-    <div className="project-form-page">
-      <h2>Edit Project</h2>
-      <form className="project-form" onSubmit={handleSubmit}>
-        <div className="form-row">
-          <div className="form-group">
-            <label>Project Title:</label>
+    <div className="container py-5">
+      <h2 className="mb-4">Edit Project</h2>
+      <form onSubmit={handleSubmit}>
+        <div className="row mb-3">
+          <div className="col-md-6">
+            <label className="form-label">Project Title</label>
             <input
               name="title"
               type="text"
+              className="form-control"
               value={form.title}
               onChange={handleChange}
               required
             />
           </div>
-          <div className="form-group">
-            <label>Deadline:</label>
+          <div className="col-md-6">
+            <label className="form-label">Deadline</label>
             <input
               name="deadline"
               type="date"
+              className="form-control"
               value={form.deadline}
               onChange={handleChange}
             />
           </div>
         </div>
 
-        <div className="form-group">
-          <label>Description:</label>
+        <div className="mb-3">
+          <label className="form-label">Description</label>
           <textarea
             name="description"
+            className="form-control"
+            rows="3"
             value={form.description}
             onChange={handleChange}
             required
           />
         </div>
 
-        <div className="form-row">
-          <div className="form-group">
-            <label>Category:</label>
-            <select name="category" value={form.category} onChange={handleChange}>
+        <div className="row mb-3">
+          <div className="col-md-6">
+            <label className="form-label">Category</label>
+            <select
+              name="category"
+              className="form-select"
+              value={form.category}
+              onChange={handleChange}
+            >
               <option value="App">App Development</option>
               <option value="Web">Web Development</option>
               <option value="ERP">ERP</option>
@@ -105,9 +114,14 @@ export default function EditProjectPage() {
             </select>
           </div>
 
-          <div className="form-group">
-            <label>Priority:</label>
-            <select name="priority" value={form.priority} onChange={handleChange}>
+          <div className="col-md-6">
+            <label className="form-label">Priority</label>
+            <select
+              name="priority"
+              className="form-select"
+              value={form.priority}
+              onChange={handleChange}
+            >
               <option value="low">Low</option>
               <option value="medium">Medium</option>
               <option value="high">High</option>
@@ -116,10 +130,11 @@ export default function EditProjectPage() {
           </div>
         </div>
 
-        <div className="form-group">
-          <label>Assign Employees:</label>
-          <div className="assign-employee-section">
+        <div className="mb-3">
+          <label className="form-label">Assign Employees</label>
+          <div className="d-flex gap-2 mb-2">
             <select
+              className="form-select"
               value={selectedEmployee}
               onChange={(e) => setSelectedEmployee(e.target.value)}
             >
@@ -134,6 +149,7 @@ export default function EditProjectPage() {
             </select>
             <button
               type="button"
+              className="btn btn-outline-primary"
               onClick={() => {
                 if (
                   selectedEmployee &&
@@ -150,36 +166,38 @@ export default function EditProjectPage() {
               Add
             </button>
           </div>
+
+          {form.assignedTo.length > 0 && (
+            <ul className="list-group">
+              {form.assignedTo.map((id) => {
+                const emp = employees.find((e) => e._id === id);
+                return (
+                  <li key={id} className="list-group-item d-flex justify-content-between align-items-center">
+                    {emp?.fullname || emp?.username || "Unknown"}
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-danger"
+                      onClick={() =>
+                        setForm((prev) => ({
+                          ...prev,
+                          assignedTo: prev.assignedTo.filter((uid) => uid !== id),
+                        }))
+                      }
+                    >
+                      Remove
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </div>
 
-        {form.assignedTo.length > 0 && (
-          <ul className="assigned-list">
-            {form.assignedTo.map((id) => {
-              const emp = employees.find((e) => e._id === id);
-              return (
-                <li key={id}>
-                  {emp?.fullname || emp?.username || "Unknown"}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setForm((prev) => ({
-                        ...prev,
-                        assignedTo: prev.assignedTo.filter((uid) => uid !== id),
-                      }))
-                    }
-                  >
-                    Remove
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-
-        <div className="form-group">
-          <label>Select Client:</label>
+        <div className="mb-4">
+          <label className="form-label">Select Client</label>
           <select
             name="clientId"
+            className="form-select"
             value={form.clientId}
             onChange={handleChange}
             required
@@ -193,11 +211,13 @@ export default function EditProjectPage() {
           </select>
         </div>
 
-        <div className="form-actions">
-          <button type="submit">Update Project</button>
+        <div className="d-flex gap-2">
+          <button type="submit" className="btn btn-success">
+            Update Project
+          </button>
           <button
             type="button"
-            className="cancel-btn"
+            className="btn btn-secondary"
             onClick={() => navigate("/projects")}
           >
             Cancel

@@ -1,14 +1,13 @@
 // src/components/MainLayout.jsx
 import Sidebar from "./Sidebar";
-import Navbar from "./Navbar";
 
 export default function MainLayout({ children }) {
   return (
-    <div>
+    <div className="d-flex min-vh-100">
       <Sidebar />
-      <Navbar />
-      <div className="container">
-        {children}
+
+      <div className="flex-grow-1">
+        <div className="p-3">{children}</div>
       </div>
     </div>
   );

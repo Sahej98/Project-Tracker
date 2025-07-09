@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../axios";
-import "../../styles/employee/DisplayEmployeePage.css";
 
 export default function DisplayEmployeePage() {
   const { id } = useParams();
@@ -39,35 +38,58 @@ export default function DisplayEmployeePage() {
 
   useEffect(() => {
     fetchEmployee();
-  }, []);
+  }, [id]);
 
-  if (!employee) return <p className="loading">Loading employee details...</p>;
+  if (!employee)
+    return (
+      <div className="container mt-5 text-center">
+        <div className="spinner-border text-primary" role="status" />
+        <p className="mt-3">Loading employee details...</p>
+      </div>
+    );
 
   return (
-    <div className="display-employee-container">
-      <div className="display-employee-card">
-        <h2 className="card-title">Employee Information</h2>
-        <div className="card-body">
-          <div className="info-row">
-            <span className="label">Full Name:</span>
-            <span className="value">{employee.fullname}</span>
-          </div>
-          <div className="info-row">
-            <span className="label">Username:</span>
-            <span className="value">{employee.username}</span>
-          </div>
-          <div className="info-row">
-            <span className="label">Email:</span>
-            <span className="value">{employee.email}</span>
-          </div>
-          <div className="info-row">
-            <span className="label">Status:</span>
-            <span className={`value ${employee.status}`}>{employee.status || "active"}</span>
+    <div className="container mt-5">
+      <div className="card shadow p-4">
+        <h2 className="card-title mb-4">Employee Information</h2>
+        <div className="mb-3 row">
+          <label className="col-sm-2 col-form-label fw-bold">Full Name:</label>
+          <div className="col-sm-10">
+            <p className="form-control-plaintext">{employee.fullname}</p>
           </div>
         </div>
-        <div className="action-buttons">
-          <button className="edit-btn" onClick={handleEdit}>Edit</button>
-          <button className="delete-btn" onClick={handleDelete}>Delete</button>
+        <div className="mb-3 row">
+          <label className="col-sm-2 col-form-label fw-bold">Username:</label>
+          <div className="col-sm-10">
+            <p className="form-control-plaintext">{employee.username}</p>
+          </div>
+        </div>
+        <div className="mb-3 row">
+          <label className="col-sm-2 col-form-label fw-bold">Email:</label>
+          <div className="col-sm-10">
+            <p className="form-control-plaintext">{employee.email}</p>
+          </div>
+        </div>
+        <div className="mb-4 row">
+          <label className="col-sm-2 col-form-label fw-bold">Status:</label>
+          <div className="col-sm-10">
+            <span
+              className={`badge ${
+                employee.status === "active" ? "bg-success" : "bg-secondary"
+              }`}
+            >
+              {employee.status || "active"}
+            </span>
+          </div>
+        </div>
+
+        <div className="d-flex justify-content-end gap-2">
+          <button className="btn btn-warning" onClick={handleEdit}>
+            Edit
+          </button>
+          <button className="btn btn-danger" onClick={handleDelete}>
+            Delete
+          </button>
         </div>
       </div>
     </div>

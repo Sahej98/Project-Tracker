@@ -1,26 +1,28 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../axios";
-import "../../styles/manager/DisplayManagerPage.css";
 
 export default function DisplayManagerPage() {
   const { id } = useParams();
   const [manager, setManager] = useState(null);
   const navigate = useNavigate();
 
-  const fetchManager = async () => {
-    try {
-      const res = await api.get("/users");
-      const foundManager = res.data.managers.find((m) => m._id === id);
-      if (foundManager) {
-        setManager(foundManager);
-      } else {
-        console.error("Manager not found");
+  useEffect(() => {
+    const fetchManager = async () => {
+      try {
+        const res = await api.get("/users");
+        const foundManager = res.data.managers.find((m) => m._id === id);
+        if (foundManager) {
+          setManager(foundManager);
+        } else {
+          console.error("Manager not found");
+        }
+      } catch (err) {
+        console.error("Error fetching manager", err);
       }
-    } catch (err) {
-      console.error("Error fetching manager", err);
-    }
-  };
+    };
+    fetchManager();
+  }, [id]);
 
   const handleDelete = async () => {
     if (window.confirm("Are you sure you want to delete this manager?")) {
@@ -37,37 +39,53 @@ export default function DisplayManagerPage() {
     navigate(`/edit-manager/${id}`);
   };
 
-  useEffect(() => {
-    fetchManager();
-  }, []);
-
-  if (!manager) return <p className="loading">Loading manager details...</p>;
+  if (!manager) {
+    return (
+      <div className="container mt-5">
+        <div className="alert alert-info">Loading manager details...</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="display-manager-container">
-      <div className="display-manager-card">
-        <h2 className="card-title">Manager Information</h2>
+    <div className="container mt-5">
+      <div className="card shadow-sm">
+        <div className="card-header">
+          <h4 className="mb-0">Manager Information</h4>
+        </div>
         <div className="card-body">
-          <div className="info-row">
-            <span className="label">Full Name:</span>
-            <span className="value">{manager.fullname}</span>
+          <div className="mb-3 row">
+            <label className="col-sm-2 col-form-label fw-bold">Full Name:</label>
+            <div className="col-sm-10">{manager.fullname}</div>
           </div>
-          <div className="info-row">
-            <span className="label">Username:</span>
-            <span className="value">{manager.username}</span>
+          <div className="mb-3 row">
+            <label className="col-sm-2 col-form-label fw-bold">Username:</label>
+            <div className="col-sm-10">{manager.username}</div>
           </div>
-          <div className="info-row">
-            <span className="label">Email:</span>
-            <span className="value">{manager.email}</span>
+          <div className="mb-3 row">
+            <label className="col-sm-2 col-form-label fw-bold">Email:</label>
+            <div className="col-sm-10">{manager.email}</div>
           </div>
-          <div className="info-row">
-            <span className="label">Status:</span>
-            <span className={`value ${manager.status}`}>{manager.status || "active"}</span>
+          <div className="mb-3 row">
+            <label className="col-sm-2 col-form-label fw-bold">Status:</label>
+            <div className="col-sm-10">
+              <span
+                className={`badge ${
+                  manager.status === "active" ? "bg-success" : "bg-secondary"
+                }`}
+              >
+                {manager.status || "active"}
+              </span>
+            </div>
           </div>
         </div>
-        <div className="action-buttons">
-          <button className="edit-btn" onClick={handleEdit}>Edit</button>
-          <button className="delete-btn" onClick={handleDelete}>Delete</button>
+        <div className="card-footer d-flex gap-2 justify-content-end">
+          <button className="btn btn-warning" onClick={handleEdit}>
+            Edit
+          </button>
+          <button className="btn btn-danger" onClick={handleDelete}>
+            Delete
+          </button>
         </div>
       </div>
     </div>

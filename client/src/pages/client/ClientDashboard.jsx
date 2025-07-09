@@ -1,4 +1,3 @@
-import "../../styles/client/ClientDashboard.css";
 
 export default function ClientDashboard() {
   return (

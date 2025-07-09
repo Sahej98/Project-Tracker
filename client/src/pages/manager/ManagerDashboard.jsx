@@ -1,4 +1,3 @@
-import "../../styles/manager/ManagerDashboard.css";
 
 export default function ManagerDashboard() {
   return (

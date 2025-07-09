@@ -1,7 +1,7 @@
+// src/pages/employees/EmployeePage.jsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../axios";
-import "../../styles/employee/EmployeePage.css";
 
 export default function EmployeePage() {
   const [employees, setEmployees] = useState([]);
@@ -9,55 +9,60 @@ export default function EmployeePage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchEmployees = async () => {
+    async function fetch() {
       try {
         const res = await api.get("/users");
         setEmployees(res.data.employees || []);
       } catch (err) {
-        console.error("Failed to fetch employees", err);
+        console.error("Error loading employees", err);
       }
-    };
-    fetchEmployees();
+    }
+    fetch();
   }, []);
 
-  const openEmployeeDetails = (id) => {
-    navigate(`/display-employee/${id}`);
-  };
-
-  // Filter employees by name
-  const filteredEmployees = employees.filter(employee =>
-    employee.fullname.toLowerCase().includes(searchTerm.toLowerCase())
+  const filtered = employees.filter((e) =>
+    e.fullname.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div className="employee-page">
-      <div className="top-bar">
-        <h2>Employees</h2>
-        <div className="top-actions">
+    <div className="container mt-4">
+      <div className="d-flex justify-content-between mb-3">
+        <h3>Employees</h3>
+        <div className="d-flex gap-2">
           <input
-            type="text"
-            placeholder="Search by name..."
+            className="form-control"
+            style={{ maxWidth: "300px" }}
+            placeholder="Search"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
           />
-          <button className="add-btn" onClick={() => navigate("/add-employee")}>
-            + Add Employee
+          <button className="btn btn-primary" onClick={() => navigate("/add-employee")}>
+            + Add
           </button>
         </div>
       </div>
-
-      <div className="employee-list">
-        {filteredEmployees.map((employee) => (
-          <div
-            key={employee._id}
-            className="employee-card"
-            onClick={() => openEmployeeDetails(employee._id)}
-          >
-            <h4>{employee.fullname}</h4>
-          </div>
-        ))}
-      </div>
+      {filtered.length === 0 ? (
+        <p>No employees found.</p>
+      ) : (
+        <div className="d-flex flex-column gap-3">
+          {filtered.map((e) => (
+            <div
+              key={e._id}
+              className="card p-3 shadow-sm d-flex flex-md-row justify-content-between align-items-center"
+              onClick={() => navigate(`/display-employee/${e._id}`)}
+              style={{ cursor: "pointer" }}
+            >
+              <div>
+                <h5>{e.fullname}</h5>
+                <small className="text-muted">{e.email}</small>
+              </div>
+              <span className={`badge bg-${e.status === "active" ? "success" : "secondary"}`}>
+                {e.status}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

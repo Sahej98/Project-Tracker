@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import "./App.css";
 import { useAuth } from "./contexts/AuthContext";
+import { SidebarProvider } from "./contexts/SidebarContext";
 import MainLayout from "./components/MainLayout";
 
 // Auth Pages
@@ -47,233 +49,235 @@ function App() {
 
   return (
     <BrowserRouter>
-      <Routes>
-        {/* Auth Routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+      <SidebarProvider>
+        <Routes>
+          {/* Auth Routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
 
-        {/* Root Dashboard */}
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <Dashboard />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
+          {/* Root Dashboard */}
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <Dashboard />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
 
-        {/* Dashboards by Role */}
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <AdminDashboard />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/manager"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <ManagerDashboard />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/employee"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <EmployeeDashboard />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/client"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <ClientDashboard />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
+          {/* Dashboards by Role */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <AdminDashboard />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/manager"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <ManagerDashboard />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/employee"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <EmployeeDashboard />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/client"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <ClientDashboard />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
 
-        {/* Project Management */}
-        <Route
-          path="/projects"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <ProjectsPage />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/display-project/:id"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <DisplayProjectPage />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/add-project"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <AddProjectPage />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/edit-project/:id"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <EditProjectPage />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
+          {/* Project Management */}
+          <Route
+            path="/projects"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <ProjectsPage />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/display-project/:id"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <DisplayProjectPage />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/add-project"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <AddProjectPage />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/edit-project/:id"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <EditProjectPage />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
 
-        {/* Client Management */}
-        <Route
-          path="/display-clients"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <ClientPage />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/add-client"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <AddClientPage />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/edit-client/:id"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <EditClientPage />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/display-client/:id"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <DisplayClientPage />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
+          {/* Client Management */}
+          <Route
+            path="/display-clients"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <ClientPage />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/add-client"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <AddClientPage />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/edit-client/:id"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <EditClientPage />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/display-client/:id"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <DisplayClientPage />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
 
-        {/* Employee Management */}
-        <Route
-          path="/display-employees"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <EmployeePage />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/add-employee"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <AddEmployeePage />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/edit-employee/:id"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <EditEmployeePage />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/display-employee/:id"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <DisplayEmployeePage />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
+          {/* Employee Management */}
+          <Route
+            path="/display-employees"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <EmployeePage />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/add-employee"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <AddEmployeePage />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/edit-employee/:id"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <EditEmployeePage />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/display-employee/:id"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <DisplayEmployeePage />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
 
-        {/* Manager Management */}
-        <Route
-          path="/display-managers"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <ManagerPage />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/add-manager"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <AddManagerPage />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/edit-manager/:id"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <EditManagerPage />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/display-manager/:id"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <DisplayManagerPage />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
+          {/* Manager Management */}
+          <Route
+            path="/display-managers"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <ManagerPage />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/add-manager"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <AddManagerPage />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/edit-manager/:id"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <EditManagerPage />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/display-manager/:id"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <DisplayManagerPage />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </SidebarProvider>
     </BrowserRouter>
   );
 }

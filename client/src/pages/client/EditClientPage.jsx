@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../axios";
-import "../../styles/client/ClientForm.css";
 
 export default function EditClientPage() {
   const navigate = useNavigate();
@@ -51,47 +50,65 @@ export default function EditClientPage() {
   };
 
   return (
-    <div className="client-form-page">
-      <h2>Edit Client</h2>
-      <form onSubmit={handleSubmit} className="client-form">
-        <div className="form-row">
-          <input
-            name="fullname"
-            placeholder="Full Name"
-            value={formData.fullname}
-            onChange={handleChange}
-            required
-          />
-          <input
-            name="username"
-            placeholder="Username"
-            value={formData.username}
-            onChange={handleChange}
-            required
-          />
+    <div className="container mt-4">
+      <h2 className="mb-4">Edit Client</h2>
+      <form onSubmit={handleSubmit} className="card shadow p-4">
+        <div className="row mb-3">
+          <div className="col-md-6 mb-3">
+            <label className="form-label">Full Name</label>
+            <input
+              name="fullname"
+              className="form-control"
+              placeholder="Full Name"
+              value={formData.fullname}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div className="col-md-6 mb-3">
+            <label className="form-label">Username</label>
+            <input
+              name="username"
+              className="form-control"
+              placeholder="Username"
+              value={formData.username}
+              onChange={handleChange}
+              required
+            />
+          </div>
         </div>
 
-        <div className="form-row">
-          <input
-            name="email"
-            placeholder="Email"
-            type="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-          />
-          <input
-            name="password"
-            placeholder="New Password (leave blank to keep current)"
-            type="password"
-            value={formData.password}
-            onChange={handleChange}
-          />
+        <div className="row mb-3">
+          <div className="col-md-6 mb-3">
+            <label className="form-label">Email</label>
+            <input
+              type="email"
+              name="email"
+              className="form-control"
+              placeholder="Email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div className="col-md-6 mb-3">
+            <label className="form-label">New Password (optional)</label>
+            <input
+              type="password"
+              name="password"
+              className="form-control"
+              placeholder="Leave blank to keep current password"
+              value={formData.password}
+              onChange={handleChange}
+            />
+          </div>
         </div>
 
-        <div className="form-row">
+        <div className="mb-4">
+          <label className="form-label">Status</label>
           <select
             name="status"
+            className="form-select"
             value={formData.status}
             onChange={handleChange}
             required
@@ -101,9 +118,13 @@ export default function EditClientPage() {
           </select>
         </div>
 
-        <div className="form-buttons">
-          <button type="submit">Update Client</button>
-          <button type="button" className="cancel-btn" onClick={() => navigate("/display-clients")}>
+        <div className="d-flex justify-content-end gap-2">
+          <button type="submit" className="btn btn-success">Update Client</button>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => navigate("/display-clients")}
+          >
             Cancel
           </button>
         </div>

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../axios";
-import "../../styles/manager/ManagerForm.css";
 
 export default function EditManagerPage() {
   const navigate = useNavigate();
@@ -51,59 +50,78 @@ export default function EditManagerPage() {
   };
 
   return (
-    <div className="manager-form-page">
-      <h2>Edit Manager</h2>
-      <form onSubmit={handleSubmit} className="manager-form">
-        <div className="form-row">
-          <input
-            name="fullname"
-            placeholder="Full Name"
-            value={formData.fullname}
-            onChange={handleChange}
-            required
-          />
-          <input
-            name="username"
-            placeholder="Username"
-            value={formData.username}
-            onChange={handleChange}
-            required
-          />
+    <div className="container mt-5">
+      <h2 className="mb-4">Edit Manager</h2>
+      <form onSubmit={handleSubmit} className="card shadow-sm p-4">
+        <div className="row mb-3">
+          <div className="col-md-6 mb-3 mb-md-0">
+            <input
+              name="fullname"
+              placeholder="Full Name"
+              value={formData.fullname}
+              onChange={handleChange}
+              required
+              className="form-control"
+            />
+          </div>
+          <div className="col-md-6">
+            <input
+              name="username"
+              placeholder="Username"
+              value={formData.username}
+              onChange={handleChange}
+              required
+              className="form-control"
+            />
+          </div>
         </div>
 
-        <div className="form-row">
-          <input
-            name="email"
-            placeholder="Email"
-            type="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-          />
-          <input
-            name="password"
-            placeholder="New Password (leave blank to keep current)"
-            type="password"
-            value={formData.password}
-            onChange={handleChange}
-          />
+        <div className="row mb-3">
+          <div className="col-md-6 mb-3 mb-md-0">
+            <input
+              name="email"
+              type="email"
+              placeholder="Email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              className="form-control"
+            />
+          </div>
+          <div className="col-md-6">
+            <input
+              name="password"
+              type="password"
+              placeholder="New Password (leave blank to keep current)"
+              value={formData.password}
+              onChange={handleChange}
+              className="form-control"
+            />
+          </div>
         </div>
 
-        <div className="form-row">
+        <div className="mb-3">
           <select
             name="status"
             value={formData.status}
             onChange={handleChange}
             required
+            className="form-select"
           >
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
         </div>
 
-        <div className="form-buttons">
-          <button type="submit">Update Manager</button>
-          <button type="button" className="cancel-btn" onClick={() => navigate("/display-managers")}>
+        <div className="d-flex justify-content-end gap-2">
+          <button type="submit" className="btn btn-success">
+            Update Manager
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => navigate("/display-managers")}
+          >
             Cancel
           </button>
         </div>

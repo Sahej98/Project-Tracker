@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../../axios";
-import "../../styles/project/DisplayProjectPage.css";
+import "bootstrap/dist/css/bootstrap.min.css";
 
 export default function DisplayProjectPage() {
   const { id } = useParams();
@@ -13,7 +13,7 @@ export default function DisplayProjectPage() {
     async function fetchProject() {
       try {
         const res = await api.get(`/projects/${id}`);
-        setProject(res.data); // Expected populated data
+        setProject(res.data); // Populated data expected
       } catch (err) {
         console.error("Failed to fetch project", err);
       } finally {
@@ -34,55 +34,56 @@ export default function DisplayProjectPage() {
     }
   };
 
-  if (loading) return <div className="loading">Loading project details…</div>;
-  if (!project) return <div className="loading">Project not found.</div>;
+  if (loading) return <div className="text-center py-5">Loading project details…</div>;
+  if (!project) return <div className="text-center py-5 text-danger">Project not found.</div>;
 
   return (
-    <div className="display-project-container">
-      <div className="display-project-card">
-        <h2 className="card-title">{project.title}</h2>
+    <div className="container py-5">
+      <div className="card shadow">
         <div className="card-body">
-          <div className="info-row">
-            <span className="label">Description:</span>
-            <span className="value">{project.description || "N/A"}</span>
+          <h2 className="card-title mb-4">{project.title}</h2>
+
+          <div className="mb-3">
+            <strong>Description:</strong>
+            <p>{project.description || "N/A"}</p>
           </div>
 
-          <div className="info-row">
-            <span className="label">Deadline:</span>
-            <span className="value">
-              {project.deadline
-                ? new Date(project.deadline).toLocaleDateString()
-                : "N/A"}
-            </span>
+          <div className="row mb-3">
+            <div className="col-md-6">
+              <strong>Deadline:</strong>
+              <p>{project.deadline ? new Date(project.deadline).toLocaleDateString() : "N/A"}</p>
+            </div>
+            <div className="col-md-6">
+              <strong>Category:</strong>
+              <p>{project.category}</p>
+            </div>
           </div>
 
-          <div className="info-row">
-            <span className="label">Category:</span>
-            <span className="value">{project.category}</span>
+          <div className="row mb-3">
+            <div className="col-md-6">
+              <strong>Priority:</strong>
+              <p className="text-capitalize">{project.priority}</p>
+            </div>
+            <div className="col-md-6">
+              <strong>Status:</strong>
+              <p className={`badge bg-${getStatusColor(project.status)}`}>
+                {project.status}
+              </p>
+            </div>
           </div>
 
-          <div className="info-row">
-            <span className="label">Priority:</span>
-            <span className="value">{project.priority}</span>
-          </div>
-
-          <div className="info-row">
-            <span className="label">Status:</span>
-            <span className={`value ${project.status}`}>{project.status}</span>
-          </div>
-
-          <div className="info-row">
-            <span className="label">Client:</span>
-            <span className="value">
+          <div className="mb-3">
+            <strong>Client:</strong>
+            <p>
               {typeof project.clientId === "object"
                 ? project.clientId.fullname || project.clientId.username
                 : project.clientId || "N/A"}
-            </span>
+            </p>
           </div>
 
-          <div className="info-row">
-            <span className="label">Assigned Employees:</span>
-            <span className="value">
+          <div className="mb-3">
+            <strong>Assigned Employees:</strong>
+            <p>
               {Array.isArray(project.assignedTo) && project.assignedTo.length > 0
                 ? project.assignedTo
                     .map((emp) =>
@@ -92,22 +93,40 @@ export default function DisplayProjectPage() {
                     )
                     .join(", ")
                 : "None"}
-            </span>
+            </p>
           </div>
-        </div>
 
-        <div className="action-buttons">
-          <button
-            className="edit-btn"
-            onClick={() => navigate(`/edit-project/${project._id}`)}
-          >
-            Edit
-          </button>
-          <button className="delete-btn" onClick={handleDelete}>
-            Delete
-          </button>
+          <div className="d-flex justify-content-end gap-2">
+            <button
+              className="btn btn-outline-primary"
+              onClick={() => navigate(`/edit-project/${project._id}`)}
+            >
+              Edit
+            </button>
+            <button className="btn btn-danger" onClick={handleDelete}>
+              Delete
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
+}
+
+// Optional helper to color-code status
+function getStatusColor(status) {
+  switch (status) {
+    case "not started":
+      return "secondary";
+    case "in progress":
+      return "info";
+    case "completed":
+      return "success";
+    case "on hold":
+      return "warning";
+    case "cancelled":
+      return "danger";
+    default:
+      return "dark";
+  }
 }
