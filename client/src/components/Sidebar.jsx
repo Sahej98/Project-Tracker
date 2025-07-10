@@ -16,7 +16,7 @@ export default function Sidebar() {
 
   const navItems = [
     { to: dashboardRoute, icon: <LayoutDashboard size={18} />, label: "Dashboard", match: [dashboardRoute] },
-    { to: "/projects", icon: <Folders size={18} />, label: "Projects", match: ["/projects", "/display-project", "/add-project", "/edit-project"] },
+    { to: "/projects", icon: <Folders size={18} />, label: "Projects", match: ["/projects", "/display-project", "/add-project", "/edit-project", "/add-task"] },
     { to: "/display-managers", icon: <UserCog size={18} />, label: "Managers", match: ["/manager", "/managers", "/display-manager", "/add-manager", "/edit-manager"] },
     { to: "/display-employees", icon: <Users size={18} />, label: "Employees", match: ["/employee", "/employees", "/display-employee", "/add-employee", "/edit-employee"] },
     { to: "/display-clients", icon: <Briefcase size={18} />, label: "Clients", match: ["/client", "/clients", "/display-client", "/add-client", "/edit-client"] },

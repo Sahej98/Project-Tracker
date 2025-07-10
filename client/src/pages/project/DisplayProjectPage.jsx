@@ -189,32 +189,48 @@ export default function DisplayProjectPage() {
       </div>
 
       {/* Tasks Section */}
-      {tasks.map((task, taskIndex) => {
+      {tasks.map((task) => {
         const completedSubtasks =
           task.subtasks?.filter((s) => s.completed)?.length || 0;
-
         const isOpen = taskOpenStates[task._id] || false;
 
+        const handleDeleteTask = async () => {
+          if (window.confirm("Are you sure you want to delete this task?")) {
+            try {
+              await api.delete(`/tasks/${task._id}`);
+              const updatedTasks = tasks.filter((t) => t._id !== task._id);
+              setTasks(updatedTasks);
+
+              const projectRes = await api.get(`/projects/${id}`);
+              setProject(projectRes.data);
+            } catch (err) {
+              console.error("Failed to delete task", err);
+            }
+          }
+        };
+
         return (
-          <div key={task._id} className="card mb-3 shadow-sm">
+          <div key={task._id} className="card mb-4 card shadow border-1">
             <div
-              className="card-header d-flex justify-content-between align-items-center"
+              className="card-header bg-white d-flex justify-content-between align-items-center"
               style={{ cursor: "pointer" }}
               onClick={() => toggleTaskOpen(task._id)}
             >
               <div>
-                <h6 className="mb-1">{task.title}</h6>
-                <small className="text-muted">Status: {task.status}</small>
+                <h5 className="mb-1 text-dark">{task.title}</h5>
+                <small className="text-muted">
+                  {completedSubtasks}/{task.subtasks?.length || 0} Subtasks
+                </small>
               </div>
-              <span className="badge bg-light text-dark">
-                {completedSubtasks}/{task.subtasks?.length || 0} Subtasks
+              <span className={`badge bg-${getStatusColor(task.status)} px-3`}>
+                {task.status}
               </span>
             </div>
 
             {isOpen && (
               <div className="card-body">
                 {task.subtasks && task.subtasks.length > 0 ? (
-                  <ul className="list-group list-group-flush">
+                  <ul className="list-group list-group-flush mb-3">
                     {task.subtasks.map((subtask, subIndex) => (
                       <li
                         key={subIndex}
@@ -225,6 +241,7 @@ export default function DisplayProjectPage() {
                             textDecoration: subtask.completed
                               ? "line-through"
                               : "none",
+                            color: subtask.completed ? "#6c757d" : "#212529",
                           }}
                         >
                           {subtask.title}
@@ -240,8 +257,17 @@ export default function DisplayProjectPage() {
                     ))}
                   </ul>
                 ) : (
-                  <div className="text-muted">No subtasks</div>
+                  <p className="text-muted mb-3">No subtasks</p>
                 )}
+
+                <div className="d-flex justify-content-end">
+                  <button
+                    className="btn btn-sm btn-outline-danger"
+                    onClick={handleDeleteTask}
+                  >
+                    Delete Task
+                  </button>
+                </div>
               </div>
             )}
           </div>

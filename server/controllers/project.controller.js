@@ -1,4 +1,5 @@
 const Project = require("../models/project.model");
+const Task = require("../models/task.model");
 
 // Get projects based on role
 const getProjects = async (req, res) => {
@@ -10,7 +11,11 @@ const getProjects = async (req, res) => {
     if (role === "employee") filter.assignedTo = userId;
     if (role === "client") filter.clientId = userId;
 
-    const projects = await Project.find(filter).populate("assignedTo clientId createdBy", "username");
+    const projects = await Project.find(filter).populate([
+      { path: "assignedTo", select: "username" },
+      { path: "createdBy", select: "username" },
+      { path: "clientId", select: "username fullname" }, // ✅ both username and full name
+    ]);
     res.json(projects);
   } catch (err) {
     res.status(500).json({ error: "Failed to get projects" });
@@ -18,9 +23,11 @@ const getProjects = async (req, res) => {
 };
 
 const getProjectById = async (req, res) => {
-  const project = await Project.findById(req.params.id).populate("clientId assignedTo");
+  const project = await Project.findById(req.params.id).populate(
+    "clientId assignedTo"
+  );
   res.json(project);
-}
+};
 
 // Create a new project
 const createProject = async (req, res) => {
@@ -38,7 +45,9 @@ const createProject = async (req, res) => {
 // Update a project
 const updateProject = async (req, res) => {
   try {
-    const updated = await Project.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const updated = await Project.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+    });
     res.json(updated);
   } catch (err) {
     res.status(400).json({ error: "Failed to update project" });
@@ -48,6 +57,8 @@ const updateProject = async (req, res) => {
 // Delete a project
 const deleteProject = async (req, res) => {
   try {
+    const projectId = req.params.id;
+    await Task.deleteMany({ projectId });
     await Project.findByIdAndDelete(req.params.id);
     res.json({ success: true });
   } catch (err) {

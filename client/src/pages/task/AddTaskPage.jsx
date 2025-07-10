@@ -54,8 +54,8 @@ export default function AddTaskPage() {
   };
 
   return (
-    <div className="container-fluid mt-4">
-      <div className="card mx-auto shadow-sm" style={{ maxWidth: "700px" }}>
+    <div className="container-fluid mt-4 px-3">
+      <div className="card shadow-sm w-100">
         <div className="card-body">
           <h4 className="mb-4">Add New Task</h4>
 

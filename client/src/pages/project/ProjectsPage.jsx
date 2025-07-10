@@ -26,9 +26,15 @@ export default function ProjectsPage() {
   };
 
   const filteredProjects = projects
-    .filter((project) =>
-      project.title.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    .filter((project) => {
+      const titleMatch = project.title
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase());
+      const clientMatch = project.client?.name
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase());
+      return titleMatch || clientMatch;
+    })
     .sort((a, b) => {
       switch (sortOption) {
         case "priority":
@@ -60,7 +66,7 @@ export default function ProjectsPage() {
           <input
             type="text"
             className="form-control"
-            placeholder="Search projects by title..."
+            placeholder="Search by project title or client name..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -108,6 +114,9 @@ export default function ProjectsPage() {
                 <h5 className="mb-1">{project.title}</h5>
                 <p className="mb-0 text-muted small">
                   {project.category} | Priority: {project.priority}
+                  {project.clientId?.fullname
+                    ? ` | Client: ${project.clientId.fullname}`
+                    : ""}
                 </p>
               </div>
               <span
