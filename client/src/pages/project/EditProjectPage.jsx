@@ -19,30 +19,52 @@ export default function EditProjectPage() {
   const [employees, setEmployees] = useState([]);
   const [clients, setClients] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const usersRes = await api.get("/users");
-        setEmployees(usersRes.data.employees || []);
-        setClients(usersRes.data.clients || []);
+ useEffect(() => {
+  const fetchData = async () => {
+    try {
+      const usersRes = await api.get("/users");
+      setEmployees(usersRes.data.employees || []);
+      setClients(usersRes.data.clients || []);
 
-        const projectRes = await api.get(`/projects/${id}`);
-        const project = projectRes.data.project;
+      const projectRes = await api.get(`/projects/${id}`);
+      const project = projectRes.data;
 
-        if (project) {
-          setForm({
-            ...project,
-            deadline: project.deadline?.slice(0, 10),
-          });
-        }
-      } catch (err) {
-        console.error("Error loading data", err);
+      if (project) {
+        const normalizedAssignedTo = Array.isArray(project.assignedTo)
+          ? project.assignedTo.map((emp) =>
+              typeof emp === "object" ? emp._id : emp
+            )
+          : [];
+
+        const normalizedClientId =
+          typeof project.clientId === "object"
+            ? project.clientId._id
+            : project.clientId;
+
+        setForm({
+          title: project.title || "",
+          description: project.description || "",
+          deadline: project.deadline
+            ? new Date(project.deadline).toISOString().slice(0, 10)
+            : "",
+          category: project.category || "App",
+          priority: project.priority || "medium",
+          assignedTo: normalizedAssignedTo,
+          clientId: normalizedClientId || "",
+        });
       }
-    };
+    } catch (err) {
+      console.error("Error loading data", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchData();
-  }, [id]);
+  fetchData();
+}, [id]);
+
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -58,10 +80,7 @@ export default function EditProjectPage() {
   };
 
   const addEmployee = () => {
-    if (
-      selectedEmployee &&
-      !form.assignedTo.includes(selectedEmployee)
-    ) {
+    if (selectedEmployee && !form.assignedTo.includes(selectedEmployee)) {
       setForm((prev) => ({
         ...prev,
         assignedTo: [...prev.assignedTo, selectedEmployee],
@@ -77,12 +96,19 @@ export default function EditProjectPage() {
     }));
   };
 
+  if (loading) {
+    return <div className="text-center mt-5">Loading project data...</div>;
+  }
+
   return (
     <div className="container-fluid mt-4">
       <div className="mx-auto" style={{ maxWidth: "960px" }}>
         <h2 className="mb-4">Edit Project</h2>
 
-        <form onSubmit={handleSubmit} className="bg-white border rounded shadow-sm p-4">
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white border rounded shadow-sm p-4"
+        >
           <div className="row">
             <div className="col-md-6 mb-3">
               <label className="form-label">Project Title</label>

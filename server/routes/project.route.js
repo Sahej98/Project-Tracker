@@ -10,10 +10,12 @@ const {
 
 const router = express.Router();
 
-router.get("/", auth(), getProjects);
+router.get("/", auth(), getProjects); // all authenticated users (role-based filter in controller)
 router.get("/:id", auth(), getProjectById);
+
+// Only admin or manager can create or update
 router.post("/", auth(["admin", "manager"]), createProject);
-router.put("/:id", auth(["admin", "manager", "employee"]), updateProject);
-router.delete("/:id", auth(["admin"]), deleteProject);
+router.put("/:id", auth(["admin", "manager"]), updateProject);
+router.delete("/:id", auth(["admin", "manager"]), deleteProject);
 
 module.exports = router;

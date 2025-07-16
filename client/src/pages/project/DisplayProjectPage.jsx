@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../../axios";
+import { jwtDecode } from "jwt-decode";
 
 export default function DisplayProjectPage() {
   const { id } = useParams();
@@ -9,6 +10,15 @@ export default function DisplayProjectPage() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [taskOpenStates, setTaskOpenStates] = useState({});
+  const [userRole, setUserRole] = useState("");
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      const decoded = jwtDecode(token);
+      setUserRole(decoded.role);
+    }
+  }, []);
 
   useEffect(() => {
     async function fetchProjectAndTasks() {
@@ -38,16 +48,29 @@ export default function DisplayProjectPage() {
     }
   };
 
-  const handleEdit = () => {
-    navigate(`/edit-project/${id}`);
+  const handleEdit = () => navigate(`/edit-project/${id}`);
+  const handleAddTask = () => navigate(`/add-task/${id}`);
+  const handleCancel = () => navigate(-1);
+
+  const handleSubtaskToggle = async (taskId, subtaskIndex) => {
+    try {
+      await api.patch(`/tasks/${taskId}/toggle-subtask`, { subtaskIndex });
+
+      const taskRes = await api.get(`/tasks?projectId=${id}`);
+      setTasks(taskRes.data || []);
+
+      const projectRes = await api.get(`/projects/${id}`);
+      setProject(projectRes.data);
+    } catch (err) {
+      console.error("Failed to toggle subtask", err);
+    }
   };
 
-  const handleAddTask = () => {
-    navigate(`/add-task/${id}`);
-  };
-
-  const handleCancel = () => {
-    navigate(-1);
+  const toggleTaskOpen = (taskId) => {
+    setTaskOpenStates((prev) => ({
+      ...prev,
+      [taskId]: !prev[taskId],
+    }));
   };
 
   if (loading) {
@@ -66,127 +89,83 @@ export default function DisplayProjectPage() {
     );
   }
 
-  const handleSubtaskToggle = async (taskId, subtaskIndex) => {
-    try {
-      await api.patch(`/tasks/${taskId}/toggle-subtask`, { subtaskIndex });
-
-      // Refetch tasks and project to reflect updates
-      const taskRes = await api.get(`/tasks?projectId=${id}`);
-      setTasks(taskRes.data || []);
-
-      const projectRes = await api.get(`/projects/${id}`);
-      setProject(projectRes.data);
-    } catch (err) {
-      console.error("Failed to toggle subtask", err);
-    }
-  };
-
-  const toggleTaskOpen = (taskId) => {
-    setTaskOpenStates((prev) => ({
-      ...prev,
-      [taskId]: !prev[taskId],
-    })); // In your task controller
-    const toggleSubtask = async (req, res) => {
-      try {
-        const { id } = req.params;
-        const { subtaskIndex } = req.body;
-
-        if (subtaskIndex === undefined) {
-          return res.status(400).json({ message: "Subtask index required" });
-        }
-
-        const task = await Task.findById(id);
-        if (!task || !task.subtasks || !task.subtasks[subtaskIndex]) {
-          return res.status(404).json({ message: "Subtask not found" });
-        }
-
-        task.subtasks[subtaskIndex].completed =
-          !task.subtasks[subtaskIndex].completed;
-
-        // Update task and possibly project status
-        // ...
-
-        await task.save();
-        res.status(200).json(task);
-      } catch (err) {
-        console.error("Error toggling subtask:", err);
-        res.status(500).json({ message: "Server error toggling subtask" });
-      }
-    };
-  };
-
   return (
-    <div
-      className="container-fluid py-2"
-      style={{ backgroundColor: "#f8f9fa" }}
-    >
+    <div className="container-fluid py-2" style={{ backgroundColor: "#f8f9fa" }}>
       <div className="bg-white shadow-sm rounded-4 p-4 w-100 card shadow mb-4">
         <h3 className="mb-4 border-bottom pb-2">Project Details</h3>
 
         <DetailRow label="Title" value={project.title} />
         <DetailRow label="Description" value={project.description || "N/A"} />
         <DetailRow
-          label="Deadline"
-          value={
-            project.deadline
-              ? new Date(project.deadline).toLocaleDateString()
-              : "N/A"
-          }
-        />
-        <DetailRow label="Category" value={project.category || "N/A"} />
-        <DetailRow label="Priority" value={project.priority || "N/A"} />
-        <DetailRow
           label="Status"
           value={
-            <span
-              className={`badge px-3 py-1 bg-${getStatusColor(project.status)}`}
-            >
+            <span className={`badge px-3 py-1 bg-${getStatusColor(project.status)}`}>
               {project.status}
             </span>
           }
         />
-        <DetailRow
-          label="Client"
-          value={
-            typeof project.clientId === "object"
-              ? project.clientId?.fullname ||
-                project.clientId?.username ||
-                "N/A"
-              : project.clientId || "N/A"
-          }
-        />
-        <DetailRow
-          label="Assigned Employees"
-          value={
-            Array.isArray(project.assignedTo) && project.assignedTo.length > 0
-              ? project.assignedTo
-                  .map((emp) =>
-                    typeof emp === "object" ? emp.fullname || emp.username : emp
-                  )
-                  .join(", ")
-              : "None"
-          }
-        />
+
+        {userRole !== "client" && (
+          <>
+            <DetailRow
+              label="Deadline"
+              value={
+                project.deadline
+                  ? new Date(project.deadline).toLocaleDateString()
+                  : "N/A"
+              }
+            />
+            <DetailRow label="Category" value={project.category || "N/A"} />
+            <DetailRow label="Priority" value={project.priority || "N/A"} />
+            <DetailRow
+              label="Client"
+              value={
+                typeof project.clientId === "object"
+                  ? project.clientId?.fullname || project.clientId?.username || "N/A"
+                  : project.clientId || "N/A"
+              }
+            />
+            <DetailRow
+              label="Assigned Employees"
+              value={
+                Array.isArray(project.assignedTo) && project.assignedTo.length > 0
+                  ? project.assignedTo
+                      .map((emp) =>
+                        typeof emp === "object"
+                          ? emp.fullname || emp.username
+                          : emp
+                      )
+                      .join(", ")
+                  : "None"
+              }
+            />
+          </>
+        )}
 
         <div className="d-flex justify-content-end gap-2 mt-4 flex-wrap">
           <button className="btn btn-outline-secondary" onClick={handleCancel}>
-            Cancel
+            Back
           </button>
-          <button className="btn btn-outline-primary" onClick={handleEdit}>
-            Edit
-          </button>
-          <button className="btn btn-outline-danger" onClick={handleDelete}>
-            Delete
-          </button>
+          {["admin", "manager"].includes(userRole) && (
+            <>
+              <button className="btn btn-outline-primary" onClick={handleEdit}>
+                Edit
+              </button>
+              <button className="btn btn-outline-danger" onClick={handleDelete}>
+                Delete
+              </button>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Add Task Button */}
-      <div className="d-flex justify-content-end mb-3">
-        <button className="btn btn-primary" onClick={handleAddTask}>
-          + Add Task
-        </button>
-      </div>
+      {["admin", "manager"].includes(userRole) && (
+        <div className="d-flex justify-content-end mb-3">
+          <button className="btn btn-primary" onClick={handleAddTask}>
+            + Add Task
+          </button>
+        </div>
+      )}
 
       {/* Tasks Section */}
       {tasks.map((task) => {
@@ -249,7 +228,9 @@ export default function DisplayProjectPage() {
                         <input
                           type="checkbox"
                           checked={subtask.completed}
+                          disabled={userRole === "client"}
                           onChange={() =>
+                            userRole !== "client" &&
                             handleSubtaskToggle(task._id, subIndex)
                           }
                         />
@@ -260,14 +241,16 @@ export default function DisplayProjectPage() {
                   <p className="text-muted mb-3">No subtasks</p>
                 )}
 
-                <div className="d-flex justify-content-end">
-                  <button
-                    className="btn btn-sm btn-outline-danger"
-                    onClick={handleDeleteTask}
-                  >
-                    Delete Task
-                  </button>
-                </div>
+                {["admin", "manager"].includes(userRole) && (
+                  <div className="d-flex justify-content-end">
+                    <button
+                      className="btn btn-sm btn-outline-danger"
+                      onClick={handleDeleteTask}
+                    >
+                      Delete Task
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
