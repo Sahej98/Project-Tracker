@@ -114,6 +114,67 @@ const toggleSubtask = async (req, res) => {
   }
 };
 
+// PATCH /tasks/:taskId/update-subtask-status
+const updateSubtaskStatus = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const { subtaskIndex, status } = req.body;
+
+    const validStatuses = ["pending", "in progress", "completed"];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: "Invalid subtask status" });
+    }
+
+    const task = await Task.findById(taskId);
+    if (!task) return res.status(404).json({ message: "Task not found" });
+
+    if (
+      subtaskIndex === undefined ||
+      subtaskIndex < 0 ||
+      subtaskIndex >= task.subtasks.length
+    ) {
+      return res.status(400).json({ message: "Invalid subtask index" });
+    }
+
+    // ✅ Update subtask status
+    task.subtasks[subtaskIndex].status = status;
+
+    // ✅ Update task status
+    const allDone = task.subtasks.every((s) => s.status === "completed");
+    const anyInProgress = task.subtasks.some((s) => s.status === "in progress" || s.status === "completed");
+
+    task.status = allDone
+      ? "completed"
+      : anyInProgress
+      ? "in progress"
+      : "pending";
+
+    await task.save();
+
+    // ✅ Update project status
+    const project = await Project.findById(task.projectId);
+    if (project) {
+      const allTasks = await Task.find({ projectId: project._id });
+
+      const allCompleted = allTasks.every((t) => t.status === "completed");
+      const allPending = allTasks.every((t) => t.status === "pending");
+
+      project.status = allCompleted
+        ? "completed"
+        : allPending
+        ? "pending"
+        : "in progress";
+
+      await project.save();
+    }
+
+    res.json({ message: "Subtask status updated", task });
+  } catch (err) {
+    console.error("Error updating subtask status:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   createTask,
   getAllTasks,
@@ -121,4 +182,5 @@ module.exports = {
   updateTask,
   deleteTask,
   toggleSubtask,
+  updateSubtaskStatus
 };

@@ -23,6 +23,8 @@ import DisplayProjectPage from "./pages/project/DisplayProjectPage";
 
 // Task Pages
 import AddTaskPage from "./pages/task/AddTaskPage";
+import ProjectTasksPage from "./pages/task/ProjectTasksPage";
+import TodayTasksPage from "./pages/task/TodayTasksPage";
 
 // Client Pages
 import ClientPage from "./pages/client/ClientPage";
@@ -165,6 +167,26 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/projects/:id/tasks"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <ProjectTasksPage />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+  path="/today-tasks"
+  element={
+    <ProtectedRoute>
+      <MainLayout>
+        <TodayTasksPage />
+      </MainLayout>
+    </ProtectedRoute>
+  }
+/>
 
           {/* Client Management */}
           <Route

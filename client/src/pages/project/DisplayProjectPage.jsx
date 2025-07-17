@@ -7,9 +7,7 @@ export default function DisplayProjectPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [project, setProject] = useState(null);
-  const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [taskOpenStates, setTaskOpenStates] = useState({});
   const [userRole, setUserRole] = useState("");
 
   useEffect(() => {
@@ -21,20 +19,17 @@ export default function DisplayProjectPage() {
   }, []);
 
   useEffect(() => {
-    async function fetchProjectAndTasks() {
+    async function fetchProject() {
       try {
         const res = await api.get(`/projects/${id}`);
         setProject(res.data);
-
-        const taskRes = await api.get(`/tasks?projectId=${id}`);
-        setTasks(taskRes.data || []);
       } catch (err) {
-        console.error("Failed to fetch project or tasks", err);
+        console.error("Failed to fetch project", err);
       } finally {
         setLoading(false);
       }
     }
-    fetchProjectAndTasks();
+    fetchProject();
   }, [id]);
 
   const handleDelete = async () => {
@@ -49,29 +44,8 @@ export default function DisplayProjectPage() {
   };
 
   const handleEdit = () => navigate(`/edit-project/${id}`);
-  const handleAddTask = () => navigate(`/add-task/${id}`);
+  const handleViewTasks = () => navigate(`/projects/${id}/tasks`);
   const handleCancel = () => navigate(-1);
-
-  const handleSubtaskToggle = async (taskId, subtaskIndex) => {
-    try {
-      await api.patch(`/tasks/${taskId}/toggle-subtask`, { subtaskIndex });
-
-      const taskRes = await api.get(`/tasks?projectId=${id}`);
-      setTasks(taskRes.data || []);
-
-      const projectRes = await api.get(`/projects/${id}`);
-      setProject(projectRes.data);
-    } catch (err) {
-      console.error("Failed to toggle subtask", err);
-    }
-  };
-
-  const toggleTaskOpen = (taskId) => {
-    setTaskOpenStates((prev) => ({
-      ...prev,
-      [taskId]: !prev[taskId],
-    }));
-  };
 
   if (loading) {
     return (
@@ -146,6 +120,9 @@ export default function DisplayProjectPage() {
           <button className="btn btn-outline-secondary" onClick={handleCancel}>
             Back
           </button>
+          <button className="btn btn-outline-dark" onClick={handleViewTasks}>
+            View Tasks
+          </button>
           {["admin", "manager"].includes(userRole) && (
             <>
               <button className="btn btn-outline-primary" onClick={handleEdit}>
@@ -158,104 +135,6 @@ export default function DisplayProjectPage() {
           )}
         </div>
       </div>
-
-      {["admin", "manager"].includes(userRole) && (
-        <div className="d-flex justify-content-end mb-3">
-          <button className="btn btn-primary" onClick={handleAddTask}>
-            + Add Task
-          </button>
-        </div>
-      )}
-
-      {/* Tasks Section */}
-      {tasks.map((task) => {
-        const completedSubtasks =
-          task.subtasks?.filter((s) => s.completed)?.length || 0;
-        const isOpen = taskOpenStates[task._id] || false;
-
-        const handleDeleteTask = async () => {
-          if (window.confirm("Are you sure you want to delete this task?")) {
-            try {
-              await api.delete(`/tasks/${task._id}`);
-              const updatedTasks = tasks.filter((t) => t._id !== task._id);
-              setTasks(updatedTasks);
-
-              const projectRes = await api.get(`/projects/${id}`);
-              setProject(projectRes.data);
-            } catch (err) {
-              console.error("Failed to delete task", err);
-            }
-          }
-        };
-
-        return (
-          <div key={task._id} className="card mb-4 card shadow border-1">
-            <div
-              className="card-header bg-white d-flex justify-content-between align-items-center"
-              style={{ cursor: "pointer" }}
-              onClick={() => toggleTaskOpen(task._id)}
-            >
-              <div>
-                <h5 className="mb-1 text-dark">{task.title}</h5>
-                <small className="text-muted">
-                  {completedSubtasks}/{task.subtasks?.length || 0} Subtasks
-                </small>
-              </div>
-              <span className={`badge bg-${getStatusColor(task.status)} px-3`}>
-                {task.status}
-              </span>
-            </div>
-
-            {isOpen && (
-              <div className="card-body">
-                {task.subtasks && task.subtasks.length > 0 ? (
-                  <ul className="list-group list-group-flush mb-3">
-                    {task.subtasks.map((subtask, subIndex) => (
-                      <li
-                        key={subIndex}
-                        className="list-group-item d-flex justify-content-between align-items-center"
-                      >
-                        <span
-                          style={{
-                            textDecoration: subtask.completed
-                              ? "line-through"
-                              : "none",
-                            color: subtask.completed ? "#6c757d" : "#212529",
-                          }}
-                        >
-                          {subtask.title}
-                        </span>
-                        <input
-                          type="checkbox"
-                          checked={subtask.completed}
-                          disabled={userRole === "client"}
-                          onChange={() =>
-                            userRole !== "client" &&
-                            handleSubtaskToggle(task._id, subIndex)
-                          }
-                        />
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-muted mb-3">No subtasks</p>
-                )}
-
-                {["admin", "manager"].includes(userRole) && (
-                  <div className="d-flex justify-content-end">
-                    <button
-                      className="btn btn-sm btn-outline-danger"
-                      onClick={handleDeleteTask}
-                    >
-                      Delete Task
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        );
-      })}
     </div>
   );
 }

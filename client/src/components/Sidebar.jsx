@@ -6,6 +6,7 @@ import {
   UserCog,
   Users,
   Briefcase,
+  CheckCircle,
 } from "lucide-react";
 import { useSidebar } from "../contexts/SidebarContext";
 
@@ -41,6 +42,16 @@ export default function Sidebar() {
       ],
     },
   ];
+
+  // Show "Today Tasks" to everyone except client
+if (role && role !== "client") {
+  navItems.push({
+    to: "/today-tasks",
+    icon: <CheckCircle size={18} />,
+    label: role === "employee" ? "My Tasks" : "Employee Tasks",
+    match: ["/today-tasks"],
+  });
+}
 
   // Admin-only nav items
   if (role === "admin") {

@@ -12,23 +12,24 @@ const taskSchema = new mongoose.Schema(
       trim: true,
     },
     status: {
-  type: String,
-  enum: ["pending", "in progress", "completed"], // ✅ Fix: now includes "in progress"
-  default: "pending",
-},
+      type: String,
+      enum: ["pending", "in progress", "completed"],
+      default: "pending",
+    },
 
     projectId: {
-  type: mongoose.Schema.Types.ObjectId,
-  ref: 'Project',
-  required: true,
-},
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Project",
+      required: true,
+    },
 
     subtasks: [
       {
         title: String,
-        completed: {
-          type: Boolean,
-          default: false,
+        status: {
+          type: String,
+          enum: ["pending", "in progress", "completed"],
+          default: "pending",
         },
       },
     ],
