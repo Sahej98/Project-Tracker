@@ -21,4 +21,4 @@ const auth = (roles = []) => {
   };
 };
 
-module.exports = auth;
+module.exports = auth; // ✅ This makes `require` return the function directly

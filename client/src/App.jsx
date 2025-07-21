@@ -44,6 +44,9 @@ import AddManagerPage from "./pages/manager/AddManagerPage";
 import EditManagerPage from "./pages/manager/EditManagerPage";
 import DisplayManagerPage from "./pages/manager/DisplayManagerPage";
 
+//Report Pages
+import ReportPage from "./pages/report/ReportPage"; // ✅ Import the report page
+
 function App() {
   const { token } = useAuth();
 
@@ -178,15 +181,15 @@ function App() {
             }
           />
           <Route
-  path="/today-tasks"
-  element={
-    <ProtectedRoute>
-      <MainLayout>
-        <TodayTasksPage />
-      </MainLayout>
-    </ProtectedRoute>
-  }
-/>
+            path="/today-tasks"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <TodayTasksPage />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
 
           {/* Client Management */}
           <Route
@@ -309,6 +312,18 @@ function App() {
               <ProtectedRoute>
                 <MainLayout>
                   <DisplayManagerPage />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Manager Management */}
+          <Route
+            path="/reports"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <ReportPage />
                 </MainLayout>
               </ProtectedRoute>
             }

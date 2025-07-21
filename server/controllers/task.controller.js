@@ -18,16 +18,18 @@ const getAllTasks = async (req, res) => {
 
     let filter = {};
     if (projectId) {
-      filter.projectId = projectId; // Make sure this matches your task schema field
+      filter.projectId = projectId; // Matches your schema
     }
 
-    const tasks = await Task.find(filter);
+    const tasks = await Task.find(filter).populate("projectId", "title"); // ✅ Added population
+
     res.status(200).json(tasks);
   } catch (err) {
     console.error("Failed to fetch tasks:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 const getTaskById = async (req, res) => {
   try {
@@ -175,6 +177,66 @@ const updateSubtaskStatus = async (req, res) => {
   }
 };
 
+// PATCH /tasks/:taskId/remove-subtask
+const removeSubtask = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const { subtaskIndex } = req.body;
+
+    const task = await Task.findById(taskId);
+    if (!task) return res.status(404).json({ message: "Task not found" });
+
+    if (
+      subtaskIndex === undefined ||
+      subtaskIndex < 0 ||
+      subtaskIndex >= task.subtasks.length
+    ) {
+      return res.status(400).json({ message: "Invalid subtask index" });
+    }
+
+    // Remove subtask
+    task.subtasks.splice(subtaskIndex, 1);
+
+    // Update task status
+    if (task.subtasks.length === 0) {
+      task.status = "pending";
+    } else {
+      const allCompleted = task.subtasks.every((s) => s.status === "completed");
+      const anyInProgress = task.subtasks.some((s) => s.status !== "pending");
+
+      task.status = allCompleted
+        ? "completed"
+        : anyInProgress
+        ? "in progress"
+        : "pending";
+    }
+
+    await task.save();
+
+    // Update project status
+    const project = await Project.findById(task.projectId);
+    if (project) {
+      const allTasks = await Task.find({ projectId: project._id });
+
+      const allCompleted = allTasks.every((t) => t.status === "completed");
+      const allPending = allTasks.every((t) => t.status === "pending");
+
+      project.status = allCompleted
+        ? "completed"
+        : allPending
+        ? "pending"
+        : "in progress";
+
+      await project.save();
+    }
+
+    res.json({ message: "Subtask deleted", task });
+  } catch (err) {
+    console.error("Error deleting subtask:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 module.exports = {
   createTask,
   getAllTasks,
@@ -182,5 +244,6 @@ module.exports = {
   updateTask,
   deleteTask,
   toggleSubtask,
-  updateSubtaskStatus
+  updateSubtaskStatus,
+  removeSubtask
 };

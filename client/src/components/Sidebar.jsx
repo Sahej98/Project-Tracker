@@ -44,14 +44,23 @@ export default function Sidebar() {
   ];
 
   // Show "Today Tasks" to everyone except client
-if (role && role !== "client") {
-  navItems.push({
-    to: "/today-tasks",
-    icon: <CheckCircle size={18} />,
-    label: role === "employee" ? "My Tasks" : "Employee Tasks",
-    match: ["/today-tasks"],
-  });
-}
+  if (role && role !== "client") {
+    navItems.push({
+      to: "/today-tasks",
+      icon: <CheckCircle size={18} />,
+      label: role === "employee" ? "My Tasks" : "Employee Tasks",
+      match: ["/today-tasks"],
+    });
+  }
+
+  if (role === "admin" || role === "manager") {
+    navItems.push({
+      to: "/reports",
+      icon: <CheckCircle size={18} />,
+      label: "Reports",
+      match: ["/reports"],
+    });
+  }
 
   // Admin-only nav items
   if (role === "admin") {
@@ -82,12 +91,7 @@ if (role && role !== "client") {
         to: "/display-clients",
         icon: <Briefcase size={18} />,
         label: "Clients",
-        match: [
-          "/clients",
-          "/display-client",
-          "/add-client",
-          "/edit-client",
-        ],
+        match: ["/clients", "/display-client", "/add-client", "/edit-client"],
       }
     );
   }
@@ -122,7 +126,10 @@ if (role && role !== "client") {
           ))}
         </nav>
         <div className="mt-auto pt-3 border-top">
-          <button onClick={handleLogout} className="btn btn-outline-secondary w-100">
+          <button
+            onClick={handleLogout}
+            className="btn btn-outline-secondary w-100"
+          >
             Logout
           </button>
         </div>

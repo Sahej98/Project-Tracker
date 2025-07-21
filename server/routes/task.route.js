@@ -8,6 +8,7 @@ router.get("/", taskController.getAllTasks);
 router.get("/:id", taskController.getTaskById);
 router.put("/:id", taskController.updateTask);
 router.delete("/:id", taskController.deleteTask);
+router.patch("/tasks/:taskId/remove-subtask", taskController.removeSubtask);
 
 // Toggle subtask completion
 router.patch("/:taskId/toggle-subtask", taskController.toggleSubtask);
