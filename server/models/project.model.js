@@ -10,7 +10,8 @@ const ProjectSchema = new mongoose.Schema({
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   assignedTo: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   clientId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
+  completedAt: { type: Date, default: null } // ✅ ADD THIS FIELD
 });
 
 module.exports = mongoose.model("Project", ProjectSchema);

@@ -34,4 +34,11 @@ router.put(
 // 🆕 Admin / Manager View - Get All Employee Reports for a Date
 router.get('/admin/reports', controller.getAllReports);
 
+// routes/dailyTask.routes.js
+router.get(
+  "/claimed/:taskId",
+  auth(["employee", "manager", "admin"]),
+  controller.getClaimedSubtasks
+);
+
 module.exports = router;

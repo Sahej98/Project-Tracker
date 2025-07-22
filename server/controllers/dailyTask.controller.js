@@ -2,77 +2,145 @@ const DailyTask = require("../models/dailyTask.model");
 const Task = require("../models/task.model");
 const Project = require("../models/project.model");
 
-// Create or Update Daily Tasks
+// controllers/dailyTask.controller.js
+exports.getClaimedSubtasks = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const today = new Date().toISOString().slice(0, 10);
+
+    const reports = await DailyTask.find({
+      date: today,
+      "tasks.taskId": taskId,
+    }).lean();
+
+    const claimedSubtaskIndexes = new Set();
+
+    reports.forEach((report) => {
+      report.tasks.forEach((t) => {
+        if (t.taskId.toString() === taskId) {
+          claimedSubtaskIndexes.add(t.subtaskIndex);
+        }
+      });
+    });
+
+    res.json({ claimed: Array.from(claimedSubtaskIndexes) });
+  } catch (err) {
+    console.error("getClaimedSubtasks error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
 exports.createOrUpdateDailyTasks = async (req, res) => {
   try {
-    const { userId, subtasks, projectId, projectTitle } = req.body;
+    const { subtasks, projectId, projectTitle } = req.body;
 
-    if (!userId || !Array.isArray(subtasks)) {
+    const userId = req.user.userId;
+    if (!userId) {
+      return res.status(400).json({ error: "User ID not found in request" });
+    }
+
+    if (!userId || !Array.isArray(subtasks) || subtasks.length === 0) {
       return res.status(400).json({ error: "Invalid payload" });
     }
 
     console.log("🔍 Incoming subtasks:", subtasks);
 
-    // Get unique taskIds
     const taskIds = [...new Set(subtasks.map((s) => s.taskId))];
 
     const tasks = await Task.find({ _id: { $in: taskIds } })
       .populate("projectId", "title")
       .lean();
 
-    console.log("📦 Fetched tasks from DB (with projectId populated):");
-    tasks.forEach((t) => {
-      console.log({
-        taskId: t._id.toString(),
-        taskTitle: t.title,
-        projectId: t.projectId, // Should show {_id, title} if populated correctly
-      });
-    });
-
-    // Resolve project title
     let resolvedProjectTitle = projectTitle;
-
     if (!resolvedProjectTitle && projectId) {
-      const proj = await Project.findById(projectId).lean();
-      resolvedProjectTitle = proj?.title || "Unknown Project";
+      const project = await Project.findById(projectId).lean();
+      resolvedProjectTitle = project?.title || "Unknown Project";
     }
 
-    // Enrich subtasks
-    const enriched = subtasks.map(({ taskId, subtaskIndex }) => {
+    const enrichedTasks = subtasks.map(({ taskId, subtaskIndex }) => {
       const task = tasks.find((t) => t._id.toString() === taskId);
       const subtask = task?.subtasks?.[subtaskIndex];
-
-      const finalProjectTitle =
-        task?.projectId?.title ||
-        task?.projectTitle ||
-        resolvedProjectTitle ||
-        "Unknown Project";
 
       return {
         taskId,
         subtaskIndex,
         taskTitle: task?.title || "Unknown Task",
         subtaskTitle: subtask?.title || "Unknown Subtask",
-        projectTitle: finalProjectTitle,
+        projectTitle:
+          task?.projectId?.title ||
+          task?.projectTitle ||
+          resolvedProjectTitle ||
+          "Unknown Project",
         status: "pending",
         remarks: "",
       };
     });
 
-    console.log("📝 Enriched subtasks for daily task:", enriched);
-
-    // Save daily task report
     const today = new Date().toISOString().slice(0, 10);
 
-    const report = await DailyTask.findOneAndUpdate(
-      { userId, date: today },
-      { userId, date: today, tasks: enriched },
-      { new: true, upsert: true }
+    // 🔒 Check if subtasks are already claimed by other employees
+    const otherReports = await DailyTask.find({
+      userId: { $ne: userId },
+      date: today,
+      "tasks.taskId": { $in: taskIds },
+    }).lean();
+
+    const globallyClaimed = new Set();
+    otherReports.forEach((report) => {
+      report.tasks.forEach((t) => {
+        globallyClaimed.add(`${t.taskId}-${t.subtaskIndex}`);
+      });
+    });
+
+    const unclaimedSubtasks = enrichedTasks.filter(
+      (t) => !globallyClaimed.has(`${t.taskId}-${t.subtaskIndex}`)
     );
 
-    console.log("✅ Daily task report saved/updated");
+    if (unclaimedSubtasks.length === 0) {
+      console.log(
+        "⚠️ All selected subtasks are already claimed by other employees."
+      );
+      return res.status(400).json({
+        error: "All selected subtasks are already claimed by other employees.",
+      });
+    }
 
-    res.json(report);
+    // ✅ Proceed to save only unclaimed subtasks
+
+    const existingReport = await DailyTask.findOne({ userId, date: today });
+
+    if (existingReport) {
+      const existingKeys = new Set(
+        existingReport.tasks.map((t) => `${t.taskId}-${t.subtaskIndex}`)
+      );
+
+      const newUniqueTasks = unclaimedSubtasks.filter(
+        (t) => !existingKeys.has(`${t.taskId}-${t.subtaskIndex}`)
+      );
+
+      if (newUniqueTasks.length === 0) {
+        console.log(
+          "⚠️ No new unique subtasks to add (already exist in your report)."
+        );
+        return res.json(existingReport);
+      }
+
+      existingReport.tasks.push(...newUniqueTasks);
+      await existingReport.save();
+
+      console.log("✅ Appended new tasks to existing daily report.");
+      return res.json(existingReport);
+    }
+
+    // No report exists - create a new one
+    const newReport = await DailyTask.create({
+      userId,
+      date: today,
+      tasks: unclaimedSubtasks,
+    });
+
+    console.log("✅ New daily task report created with unclaimed subtasks.");
+    res.json(newReport);
   } catch (err) {
     console.error("❗ Error in createOrUpdateDailyTasks:", err);
     res.status(500).json({ error: "Server error" });
@@ -84,12 +152,14 @@ exports.getAllTodayReports = async (req, res) => {
   try {
     const today = new Date().toISOString().slice(0, 10);
 
-    const reports = await DailyTask.find({ date: today })
-      .populate("userId", "fullname");
+    const reports = await DailyTask.find({ date: today }).populate(
+      "userId",
+      "fullname"
+    );
 
     // Get all unique taskIds from reports
-    const taskIds = reports.flatMap(r => r.tasks.map(t => t.taskId));
-    const uniqueTaskIds = [...new Set(taskIds.map(id => id.toString()))];
+    const taskIds = reports.flatMap((r) => r.tasks.map((t) => t.taskId));
+    const uniqueTaskIds = [...new Set(taskIds.map((id) => id.toString()))];
 
     // Fetch tasks with project titles
     const tasks = await Task.find({ _id: { $in: uniqueTaskIds } })
@@ -97,10 +167,10 @@ exports.getAllTodayReports = async (req, res) => {
       .lean();
 
     const taskMap = {};
-    tasks.forEach(t => {
+    tasks.forEach((t) => {
       taskMap[t._id.toString()] = {
         taskTitle: t.title,
-        projectTitle: t.projectId?.title || "Unknown Project"
+        projectTitle: t.projectId?.title || "Unknown Project",
       };
     });
 
@@ -139,7 +209,6 @@ exports.getAllTodayReports = async (req, res) => {
   }
 };
 
-
 // Get Today's Report for a Specific User
 exports.getTodayReport = async (req, res) => {
   try {
@@ -153,7 +222,7 @@ exports.getTodayReport = async (req, res) => {
     }
 
     // Get unique taskIds from this user's report
-    const taskIds = report.tasks.map(t => t.taskId.toString());
+    const taskIds = report.tasks.map((t) => t.taskId.toString());
 
     // Fetch related tasks with project titles
     const tasks = await Task.find({ _id: { $in: taskIds } })
@@ -161,15 +230,16 @@ exports.getTodayReport = async (req, res) => {
       .lean();
 
     const taskMap = {};
-    tasks.forEach(t => {
+    tasks.forEach((t) => {
       taskMap[t._id.toString()] = {
         taskTitle: t.title,
-        projectTitle: t.projectId?.title || "Unknown Project"
+        projectTitle: t.projectId?.title || "Unknown Project",
+        projectId: t.projectId?._id?.toString() || null, // ✅ Include projectId
       };
     });
 
-    // Enrich tasks with project titles dynamically
-    const enrichedTasks = report.tasks.map(t => {
+    // Enrich tasks with projectId
+    const enrichedTasks = report.tasks.map((t) => {
       const taskInfo = taskMap[t.taskId.toString()] || {};
       return {
         taskId: t.taskId,
@@ -177,23 +247,25 @@ exports.getTodayReport = async (req, res) => {
         taskTitle: taskInfo.taskTitle || t.taskTitle || "Unknown Task",
         subtaskTitle: t.subtaskTitle || "Unknown Subtask",
         projectTitle: taskInfo.projectTitle || "Unknown Project",
+        projectId: taskInfo.projectId, // ✅ Add projectId here
         status: t.status,
-        remarks: t.remarks || ""
+        remarks: t.remarks || "",
+        timeSpent: t.timeSpent || "-", // ✅ Safe fallback for timeSpent
       };
     });
 
+    // ✅ Final Response including report _id
     res.json({
+      _id: report._id, // ✅ Important fix
       userId: report.userId,
       date: report.date,
-      tasks: enrichedTasks
+      tasks: enrichedTasks,
     });
-
   } catch (err) {
     console.error("getTodayReport error:", err);
     res.status(500).json({ error: "Server error" });
   }
 };
-
 
 // Submit Daily Report Updates
 exports.submitDailyReport = async (req, res) => {
@@ -201,22 +273,111 @@ exports.submitDailyReport = async (req, res) => {
     const { id } = req.params;
     const { tasks } = req.body;
 
+    console.log("Incoming update:", tasks);
+
     const report = await DailyTask.findById(id);
     if (!report) return res.status(404).json({ error: "Report not found" });
 
+    // Update subtasks in the report
     tasks.forEach((u) => {
       const orig = report.tasks.find(
         (t) =>
           t.taskId.toString() === u.taskId && t.subtaskIndex === u.subtaskIndex
       );
+
       if (orig) {
-        orig.status = u.status;
-        orig.remarks = u.remarks;
+        orig.status = u.status || orig.status;
+        orig.remarks = u.remarks !== undefined ? u.remarks : orig.remarks;
+        orig.timeSpent =
+          u.timeSpent !== undefined ? u.timeSpent : orig.timeSpent;
+
+        console.log("✅ Updated Task:", {
+          taskId: orig.taskId,
+          subtaskIndex: orig.subtaskIndex,
+          status: orig.status,
+          remarks: orig.remarks,
+          timeSpent: orig.timeSpent,
+        });
       }
     });
 
+    report.markModified("tasks");
     await report.save();
-    res.json(report);
+
+    console.log("✅ Daily report updated successfully");
+
+    // 🔥 Cascade Status Updates: Task & Project
+    const updatedTaskIds = [...new Set(tasks.map((t) => t.taskId))];
+    const today = new Date().toISOString().slice(0, 10);
+
+    for (const taskId of updatedTaskIds) {
+      const task = await Task.findById(taskId);
+      if (!task) continue;
+
+      const reportsWithTask = await DailyTask.find({
+        "tasks.taskId": taskId,
+        date: today,
+      });
+
+      const subtaskCount = task.subtasks.length;
+
+      let subtaskStatuses = Array(subtaskCount).fill("pending");
+
+      for (let i = 0; i < subtaskCount; i++) {
+        for (const report of reportsWithTask) {
+          const t = report.tasks.find(
+            (x) => x.taskId.toString() === taskId && x.subtaskIndex === i
+          );
+          if (t) {
+            if (t.status === "completed") {
+              subtaskStatuses[i] = "completed";
+            } else if (
+              t.status === "in progress" &&
+              subtaskStatuses[i] !== "completed"
+            ) {
+              subtaskStatuses[i] = "in progress";
+            }
+          }
+        }
+      }
+
+      // Determine Task Status
+      if (subtaskStatuses.every((s) => s === "completed")) {
+        task.status = "completed";
+      } else if (subtaskStatuses.every((s) => s === "pending")) {
+        task.status = "pending";
+      } else {
+        task.status = "in progress";
+      }
+
+      await task.save();
+
+      // Handle Project Status
+      if (task.projectId) {
+        const projectTasks = await Task.find({ projectId: task.projectId });
+        const project = await Project.findById(task.projectId);
+
+        const taskStatuses = projectTasks.map((t) => t.status);
+
+        if (taskStatuses.every((s) => s === "completed")) {
+          project.status = "completed";
+
+          if (!project.completedAt) {
+            project.completedAt = new Date(); // ✅ Set completedAt when project is done
+          }
+        } else {
+          project.status = taskStatuses.every((s) => s === "pending")
+            ? "pending"
+            : "in progress";
+
+          project.completedAt = null; // ✅ Clear completedAt if project is reopened
+        }
+
+        await project.save();
+      }
+    }
+
+    res.json({ message: "Report and statuses updated successfully" });
   } catch (err) {
     console.error("submitDailyReport error:", err);
     res.status(500).json({ error: "Server error" });
@@ -228,52 +389,56 @@ exports.getAllReports = async (req, res) => {
     const { date } = req.query;
 
     if (!date) {
-      return res.status(400).json({ error: 'Date is required' });
+      return res.status(400).json({ error: "Date is required" });
     }
 
-    const reports = await DailyTask.find({ date }).populate('userId', 'fullname');
+    const reports = await DailyTask.find({ date }).populate(
+      "userId",
+      "fullname"
+    );
 
-    const taskIds = reports.flatMap(r => r.tasks.map(t => t.taskId));
-    const uniqueTaskIds = [...new Set(taskIds.map(id => id.toString()))];
+    const taskIds = reports.flatMap((r) => r.tasks.map((t) => t.taskId));
+    const uniqueTaskIds = [...new Set(taskIds.map((id) => id.toString()))];
 
     const tasks = await Task.find({ _id: { $in: uniqueTaskIds } })
-      .populate('projectId', 'title')
+      .populate("projectId", "title")
       .lean();
 
     const taskMap = {};
-    tasks.forEach(t => {
+    tasks.forEach((t) => {
       taskMap[t._id.toString()] = {
         taskTitle: t.title,
-        projectTitle: t.projectId?.title || 'Unknown Project'
+        projectTitle: t.projectId?.title || "Unknown Project",
       };
     });
 
     const grouped = {};
 
-    reports.forEach(report => {
+    reports.forEach((report) => {
       const employee = report.userId.fullname;
       if (!grouped[employee]) grouped[employee] = {};
 
-      report.tasks.forEach(t => {
+      report.tasks.forEach((t) => {
         const taskInfo = taskMap[t.taskId.toString()] || {};
-        const project = taskInfo.projectTitle || 'Unknown Project';
-        const taskTitle = taskInfo.taskTitle || 'Unknown Task';
+        const project = taskInfo.projectTitle || "Unknown Project";
+        const taskTitle = taskInfo.taskTitle || "Unknown Task";
 
         if (!grouped[employee][project]) grouped[employee][project] = {};
-        if (!grouped[employee][project][taskTitle]) grouped[employee][project][taskTitle] = [];
+        if (!grouped[employee][project][taskTitle])
+          grouped[employee][project][taskTitle] = [];
 
         grouped[employee][project][taskTitle].push({
           subtaskTitle: t.subtaskTitle,
           status: t.status,
-          remarks: t.remarks || 'None'
+          remarks: t.remarks || "None",
+          timeSpent: t.timeSpent || "-", // ✅ Added timeSpent
         });
       });
     });
 
     res.json({ grouped });
-
   } catch (err) {
-    console.error('Admin Report Fetch Error:', err);
-    res.status(500).json({ error: 'Server error' });
+    console.error("Admin Report Fetch Error:", err);
+    res.status(500).json({ error: "Server error" });
   }
-}
+};

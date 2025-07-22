@@ -64,7 +64,7 @@ export default function DisplayProjectPage() {
   }
 
   return (
-    <div className="container-fluid py-2" style={{ backgroundColor: "#f8f9fa" }}>
+    <div className="container-fluid py-2">
       <div className="bg-white shadow-sm rounded-4 p-4 w-100 card shadow mb-4">
         <h3 className="mb-4 border-bottom pb-2">Project Details</h3>
 

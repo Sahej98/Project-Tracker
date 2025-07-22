@@ -9,64 +9,74 @@ export default function ProjectTasksPage() {
   const { id: projectId } = useParams();
   const [tasks, setTasks] = useState([]);
   const [expandedTasks, setExpandedTasks] = useState([]);
-  const [selectedSubtasks, setSelectedSubtasks] = useState(
-    JSON.parse(localStorage.getItem(`today-${projectId}`)) || []
-  );
+  const [selectedSubtasks, setSelectedSubtasks] = useState([]);
   const [userId, setUserId] = useState("");
   const [userRole, setUserRole] = useState("");
   const [search, setSearch] = useState("");
+  const [claimedSubtasksMap, setClaimedSubtasksMap] = useState({});
   const navigate = useNavigate();
 
   const isAdminOrManager = userRole === "admin" || userRole === "manager";
 
-  // Fetch tasks & user info
+  // Fetch tasks & claimed subtasks
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
       const { userId, role } = jwtDecode(token);
       setUserId(userId);
       setUserRole(role);
-    }
 
-    api
-      .get(`/tasks?projectId=${projectId}`)
-      .then((res) => setTasks(res.data))
-      .catch(console.error);
+      api.get(`/daily-tasks/today/${userId}`).then((res) => {
+        const todayTasks = res.data.tasks || [];
+
+        const projectSubtasks = todayTasks
+          .filter((t) => t.projectId === projectId)
+          .map((t) => `${t.taskId}-${t.subtaskIndex}`);
+
+        const local = JSON.parse(localStorage.getItem(`today-${projectId}`)) || [];
+
+        const merged = projectSubtasks.length > 0 ? projectSubtasks : local;
+        setSelectedSubtasks(merged);
+      });
+
+      fetchTasksAndClaims();
+    }
   }, [projectId]);
 
-  // Clean up selectedSubtasks if task list changed (prevent unknown task issues)
+  // Save to local storage for persistence
   useEffect(() => {
-    const validKeys = [];
+    localStorage.setItem(`today-${projectId}`, JSON.stringify(selectedSubtasks));
+  }, [selectedSubtasks, projectId]);
 
-    tasks.forEach((task) => {
-      task.subtasks.forEach((_, idx) => {
-        validKeys.push(`${task._id}-${idx}`);
-      });
-    });
+  const fetchTasksAndClaims = async () => {
+    try {
+      const res = await api.get(`/tasks?projectId=${projectId}`);
+      setTasks(res.data);
 
-    const filtered = selectedSubtasks.filter((k) => validKeys.includes(k));
+      const claimedMap = {};
 
-    if (filtered.length !== selectedSubtasks.length) {
-      setSelectedSubtasks(filtered);
-      localStorage.setItem(`today-${projectId}`, JSON.stringify(filtered));
+      for (const task of res.data) {
+        const response = await api.get(`/daily-tasks/claimed/${task._id}`);
+        claimedMap[task._id] = response.data.claimed; // Array of subtask indexes
+      }
+
+      setClaimedSubtasksMap(claimedMap);
+    } catch (err) {
+      console.error(err);
+      toast.error("❌ Failed to fetch tasks or claims");
     }
-  }, [tasks, selectedSubtasks, projectId]);
+  };
 
   const toggleSubtask = (taskId, idx) => {
     const key = `${taskId}-${idx}`;
-    const arr = selectedSubtasks.includes(key)
-      ? selectedSubtasks.filter((k) => k !== key)
-      : [...selectedSubtasks, key];
-
-    setSelectedSubtasks(arr);
-    localStorage.setItem(`today-${projectId}`, JSON.stringify(arr));
+    setSelectedSubtasks((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+    );
   };
 
   const toggleExpand = (taskId) => {
     setExpandedTasks((prev) =>
-      prev.includes(taskId)
-        ? prev.filter((id) => id !== taskId)
-        : [...prev, taskId]
+      prev.includes(taskId) ? prev.filter((id) => id !== taskId) : [...prev, taskId]
     );
   };
 
@@ -81,17 +91,15 @@ export default function ProjectTasksPage() {
 
     api
       .post("/daily-tasks", {
-        userId,
         projectId,
         projectTitle,
         subtasks: payload,
       })
       .then(() => {
         toast.success("✅ Tasks saved for today!");
-
-        // 🔴 Clear checkboxes and localStorage
         setSelectedSubtasks([]);
         localStorage.removeItem(`today-${projectId}`);
+        fetchTasksAndClaims();
       })
       .catch((e) => {
         console.error(e);
@@ -119,10 +127,7 @@ export default function ProjectTasksPage() {
         setTasks((prev) =>
           prev.map((t) =>
             t._id === taskId
-              ? {
-                  ...t,
-                  subtasks: t.subtasks.filter((_, i) => i !== subtaskIndex),
-                }
+              ? { ...t, subtasks: t.subtasks.filter((_, i) => i !== subtaskIndex) }
               : t
           )
         );
@@ -134,9 +139,13 @@ export default function ProjectTasksPage() {
     }
   };
 
-  const filteredTasks = tasks.filter((t) =>
-    t.title.toLowerCase().includes(search.toLowerCase())
-  );
+  // Filter tasks for employee view
+  const filteredTasks = tasks
+    .filter((t) => t.title.toLowerCase().includes(search.toLowerCase()))
+    .filter((t) => {
+      if (isAdminOrManager) return true;
+      return t.subtasks.some((s) => s.status !== "completed");
+    });
 
   return (
     <div className="container py-4">
@@ -154,14 +163,20 @@ export default function ProjectTasksPage() {
           onChange={(e) => setSearch(e.target.value)}
         />
 
-        {isAdminOrManager && (
-          <button
-            className="btn btn-success"
-            onClick={() => navigate(`/add-task/${projectId}`)}
-          >
-            ➕ Add Task
+        <div className="d-flex gap-2">
+          <button className="btn btn-outline-secondary" onClick={fetchTasksAndClaims}>
+            🔄 Refresh Claimed
           </button>
-        )}
+
+          {isAdminOrManager && (
+            <button
+              className="btn btn-success"
+              onClick={() => navigate(`/add-task/${projectId}`)}
+            >
+              ➕ Add Task
+            </button>
+          )}
+        </div>
       </div>
 
       {filteredTasks.map((t) => (
@@ -194,46 +209,57 @@ export default function ProjectTasksPage() {
 
           {expandedTasks.includes(t._id) && (
             <ul className="list-group list-group-flush">
-              {t.subtasks?.map((s, i) => (
-                <li
-                  key={i}
-                  className="list-group-item d-flex justify-content-between align-items-center"
-                >
-                  <div className="d-flex align-items-center">
-                    {userRole === "employee" && (
-                      <input
-                        type="checkbox"
-                        className="form-check-input me-2"
-                        checked={selectedSubtasks.includes(`${t._id}-${i}`)}
-                        onChange={() => toggleSubtask(t._id, i)}
-                        id={`${t._id}-${i}`}
-                      />
-                    )}
-                    <label
-                      className="form-check-label mb-0"
-                      htmlFor={`${t._id}-${i}`}
-                    >
-                      {s.title}
-                    </label>
-                  </div>
+              {t.subtasks?.map((s, i) => {
+                if (!isAdminOrManager && s.status === "completed") return null;
 
-                  {isAdminOrManager && (
-                    <button
-                      className="btn btn-sm btn-outline-danger"
-                      onClick={() => deleteSubtask(t._id, i)}
-                      title="Delete Subtask"
-                    >
-                      ❌
-                    </button>
-                  )}
-                </li>
-              ))}
+                const key = `${t._id}-${i}`;
+                const isSelectedByMe = selectedSubtasks.includes(key);
+                const isClaimedByOther =
+                  claimedSubtasksMap[t._id]?.includes(i) && !isSelectedByMe;
+
+                return (
+                  <li
+                    key={i}
+                    className="list-group-item d-flex justify-content-between align-items-center"
+                  >
+                    <div>
+                      {s.title}
+                      {isClaimedByOther && (
+                        <span className="badge bg-warning text-dark ms-2">Taken</span>
+                      )}
+                    </div>
+
+                    <div className="d-flex align-items-center gap-2">
+                      {isAdminOrManager && (
+                        <button
+                          className="btn btn-sm btn-outline-danger"
+                          onClick={() => deleteSubtask(t._id, i)}
+                          title="Delete Subtask"
+                        >
+                          ❌
+                        </button>
+                      )}
+
+                      {userRole === "employee" && (
+                        <input
+                          type="checkbox"
+                          className="form-check-input"
+                          checked={isSelectedByMe}
+                          disabled={isClaimedByOther}
+                          onChange={() => toggleSubtask(t._id, i)}
+                          id={key}
+                        />
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
       ))}
 
-      {userRole === "employee" && (
+      {userRole === "employee" && selectedSubtasks.length > 0 && (
         <div className="text-end mt-4">
           <button className="btn btn-primary px-4 py-2" onClick={submit}>
             💾 Save Daily Tasks

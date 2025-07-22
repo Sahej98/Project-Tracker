@@ -8,9 +8,11 @@ export default function TodayTasksPage() {
   const [tasks, setTasks] = useState([]);
   const [reportId, setReportId] = useState("");
   const [userRole, setUserRole] = useState("");
+  const [userId, setUserId] = useState("");
   const [adminReports, setAdminReports] = useState({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [submissionComplete, setSubmissionComplete] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -19,13 +21,35 @@ export default function TodayTasksPage() {
     try {
       const decoded = jwtDecode(token);
       setUserRole(decoded.role);
+      setUserId(decoded.userId);
 
       const fetchTodayTasks = async () => {
         setLoading(true);
         try {
           if (decoded.role === "employee") {
             const res = await api.get(`/daily-tasks/today/${decoded.userId}`);
-            setTasks(res.data.tasks || []);
+            const tasksWithTime = res.data.tasks.map((t) => {
+              let hours = 0;
+              let minutes = 0;
+
+              if (t.timeSpent) {
+                const match = t.timeSpent.match(/(\d+)h\s*(\d+)m/);
+                if (match) {
+                  hours = parseInt(match[1], 10);
+                  minutes = parseInt(match[2], 10);
+                }
+              }
+
+              return {
+                ...t,
+                status: t.status || "pending",
+                remarks: t.remarks || "",
+                timeHours: hours,
+                timeMinutes: minutes,
+              };
+            });
+
+            setTasks(tasksWithTime);
             setReportId(res.data._id || "");
           } else {
             const res = await api.get(`/daily-tasks/today`);
@@ -46,139 +70,194 @@ export default function TodayTasksPage() {
     }
   }, []);
 
-  const handleChange = (index, field, value) => {
-    setTasks((prev) => {
-      const updated = [...prev];
-      updated[index] = { ...updated[index], [field]: value };
-      return updated;
-    });
+  const handleChange = (taskKey, field, value) => {
+    setTasks((prev) =>
+      prev.map((t) =>
+        `${t.taskId}-${t.subtaskIndex}` === taskKey
+          ? { ...t, [field]: value }
+          : t
+      )
+    );
   };
 
   const handleSubmit = async () => {
     try {
-      await api.put(`/daily-tasks/${reportId}`, { tasks });
+      const updatePayload = tasks.map((t) => {
+        let timeSpent = undefined;
+
+        if (t.timeHours > 0 || t.timeMinutes > 0) {
+          timeSpent = `${t.timeHours}h ${t.timeMinutes}m`;
+        }
+
+        return {
+          taskId: t.taskId,
+          subtaskIndex: t.subtaskIndex,
+          status: t.status || "pending",
+          remarks: t.remarks !== undefined ? t.remarks : "",
+          timeSpent: timeSpent,
+        };
+      });
+
+      await api.put(`/daily-tasks/${reportId}`, { tasks: updatePayload });
 
       toast.success("✅ Report submitted!");
-
-      // Clear tasks after submission
+      setSubmissionComplete(true);
       setTasks([]);
-      setReportId("");
-
-      // Clear localStorage subtasks selection (if any key was used for that)
-      // If you used `today-<projectId>` before, remove those keys here if needed
     } catch (err) {
       console.error("Failed to submit report", err);
       toast.error("❌ Submission failed");
     }
   };
 
-  const handleDownloadCSV = () => {
-    let csv = "Employee,Project,Task,Subtask,Status,Remarks\n";
-
-    Object.entries(adminReports).forEach(([employeeName, projects]) => {
-      Object.entries(projects).forEach(([projectTitle, tasks]) => {
-        Object.entries(tasks).forEach(([taskTitle, subtasks]) => {
-          subtasks.forEach((subtask) => {
-            csv += `"${employeeName}","${projectTitle}","${taskTitle}","${subtask.subtaskTitle}","${subtask.status}","${subtask.remarks}"\n`;
-          });
-        });
-      });
-    });
-
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "today-tasks.csv";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const getHourOptions = () => {
+    return Array.from({ length: 13 }, (_, i) => (
+      <option key={i} value={i}>
+        {i} hr
+      </option>
+    ));
   };
 
-  const handleDownloadPDF = () => {
-    window.print();
+  const getMinuteOptions = () => {
+    return Array.from({ length: 60 }, (_, i) => (
+      <option key={i} value={i}>
+        {i} min
+      </option>
+    ));
   };
 
   if (loading)
     return <div className="container py-5 text-center">Loading...</div>;
 
   return (
-    <div className="container-fluid py-3 px-1 px-md-5">
+    <div className="container py-3 px-md-5">
       <ToastContainer position="top-center" autoClose={2500} />
 
       <h2 className="fw-semibold text-dark mb-4">Today's Tasks</h2>
 
       {userRole === "employee" && (
         <>
-          {tasks.length === 0 ? (
+          {submissionComplete ? (
+            <div className="alert alert-success text-center mt-4">
+              🎉 You have completed today's tasks!
+            </div>
+          ) : tasks.length === 0 ? (
             <div className="alert alert-info text-center">
               No tasks selected for today.
             </div>
           ) : (
-            <div className="d-flex flex-column gap-3 mb-4">
-              {Object.entries(
-                tasks.reduce((acc, task) => {
-                  if (!acc[task.projectTitle]) acc[task.projectTitle] = [];
-                  acc[task.projectTitle].push(task);
-                  return acc;
-                }, {})
-              ).map(([projectTitle, projectTasks]) => (
-                <div key={projectTitle} className="card shadow p-3 bg-white">
-                  <h5 className="fw-semibold mb-3 text-primary">
-                    {projectTitle}
-                  </h5>
+            <>
+              <div className="d-flex flex-column gap-3 mb-4">
+                {Object.entries(
+                  tasks.reduce((acc, task) => {
+                    if (!acc[task.projectTitle]) acc[task.projectTitle] = [];
+                    acc[task.projectTitle].push(task);
+                    return acc;
+                  }, {})
+                ).map(([projectTitle, projectTasks]) => (
+                  <div key={projectTitle} className="card shadow p-3 bg-white">
+                    <h5 className="fw-semibold mb-3 text-primary">
+                      {projectTitle}
+                    </h5>
 
-                  {projectTasks.map((t, i) => (
-                    <div
-                      key={t.taskId + "-" + t.subtaskIndex}
-                      className="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between mb-3 p-2 rounded border bg-light"
-                    >
-                      <div className="mb-2 mb-md-0">
-                        <h6 className="mb-1 fw-bold">{t.taskTitle}</h6>
-                        <p className="mb-0 text-muted small">
-                          ➝ {t.subtaskTitle}
-                        </p>
-                      </div>
+                    {projectTasks.map((t) => {
+                      const taskKey = `${t.taskId}-${t.subtaskIndex}`;
 
-                      <div className="d-flex gap-2 flex-wrap mt-2 mt-md-0">
-                        <select
-                          className="form-select form-select-sm"
-                          style={{ minWidth: "150px" }}
-                          value={t.status}
-                          onChange={(e) =>
-                            handleChange(i, "status", e.target.value)
-                          }
+                      return (
+                        <div
+                          key={taskKey}
+                          className="p-2 rounded border bg-light mb-3"
                         >
-                          <option value="pending">Pending</option>
-                          <option value="in progress">In Progress</option>
-                          <option value="completed">Completed</option>
-                        </select>
-                        <input
-                          type="text"
-                          className="form-control form-control-sm"
-                          placeholder="Remarks"
-                          value={t.remarks}
-                          onChange={(e) =>
-                            handleChange(i, "remarks", e.target.value)
-                          }
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
-          )}
+                          <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
+                            <div style={{ flex: 1 }}>
+                              <h6 className="mb-1 fw-bold">{t.taskTitle}</h6>
+                              <p className="mb-0 text-muted small">
+                                ➝ {t.subtaskTitle}
+                              </p>
+                            </div>
 
-          {tasks.length > 0 && (
-            <div className="text-end">
-              <button
-                className="btn btn-primary px-4 py-2"
-                onClick={handleSubmit}
-              >
-                Submit Report
-              </button>
-            </div>
+                            <div
+                              className="d-flex gap-2 mt-2 mt-md-0"
+                              style={{ flex: 1 }}
+                            >
+                              <select
+                                className="form-select form-select-sm"
+                                style={{ minWidth: "150px" }}
+                                value={t.status}
+                                onChange={(e) =>
+                                  handleChange(
+                                    taskKey,
+                                    "status",
+                                    e.target.value
+                                  )
+                                }
+                              >
+                                <option value="pending">Pending</option>
+                                <option value="in progress">In Progress</option>
+                                <option value="completed">Completed</option>
+                              </select>
+
+                              <div
+                                className="d-flex gap-1 flex-wrap"
+                                style={{ minWidth: "160px" }}
+                              >
+                                <select
+                                  className="form-select form-select-sm"
+                                  value={t.timeHours}
+                                  onChange={(e) =>
+                                    handleChange(
+                                      taskKey,
+                                      "timeHours",
+                                      Number(e.target.value)
+                                    )
+                                  }
+                                >
+                                  {getHourOptions()}
+                                </select>
+
+                                <select
+                                  className="form-select form-select-sm"
+                                  value={t.timeMinutes}
+                                  onChange={(e) =>
+                                    handleChange(
+                                      taskKey,
+                                      "timeMinutes",
+                                      Number(e.target.value)
+                                    )
+                                  }
+                                >
+                                  {getMinuteOptions()}
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-2">
+                            <input
+                              type="text"
+                              className="form-control form-control-sm"
+                              placeholder="Remarks"
+                              value={t.remarks}
+                              onChange={(e) =>
+                                handleChange(taskKey, "remarks", e.target.value)
+                              }
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+
+              <div className="text-end">
+                <button
+                  className="btn btn-primary px-4 py-2"
+                  onClick={handleSubmit}
+                >
+                  Submit Report
+                </button>
+              </div>
+            </>
           )}
         </>
       )}
@@ -194,21 +273,6 @@ export default function TodayTasksPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
-
-            <div className="d-flex gap-2">
-              <button
-                className="btn btn-outline-secondary"
-                onClick={handleDownloadCSV}
-              >
-                📥 CSV
-              </button>
-              <button
-                className="btn btn-outline-secondary"
-                onClick={handleDownloadPDF}
-              >
-                🖨️ PDF
-              </button>
-            </div>
           </div>
 
           {Object.keys(adminReports).length === 0 ? (
@@ -228,55 +292,65 @@ export default function TodayTasksPage() {
                     <table className="table table-bordered mb-0">
                       <thead className="table-light">
                         <tr>
-                          <th style={{ width: "25%" }}>Project</th>
-                          <th style={{ width: "25%" }}>Task</th>
-                          <th style={{ width: "25%" }}>Subtask</th>
+                          <th>Project</th>
+                          <th>Task</th>
+                          <th>Subtask</th>
                           <th>Status</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {Object.entries(projects).map(([projectTitle, tasks]) => {
-                          let projectRowSpan = 0;
-                          Object.values(tasks).forEach((subtaskList) => {
-                            projectRowSpan += subtaskList.length;
-                          });
-
-                          let firstProjectRow = true;
-
-                          return Object.entries(tasks).map(([taskTitle, subtasks]) => {
-                            let taskRowSpan = subtasks.length;
-
-                            return subtasks.map((subtask, idx) => {
-                              const row = (
-                                <tr
-                                  key={`${employeeName}-${projectTitle}-${taskTitle}-${idx}`}
-                                >
-                                  {firstProjectRow && idx === 0 && (
-                                    <td
-                                      rowSpan={projectRowSpan}
-                                      className="align-middle fw-semibold"
-                                    >
-                                      {projectTitle}
-                                    </td>
-                                  )}
-                                  {idx === 0 && (
-                                    <td rowSpan={taskRowSpan} className="align-middle">
-                                      {taskTitle}
-                                    </td>
-                                  )}
-                                  <td>{subtask.subtaskTitle}</td>
-                                  <td>{subtask.status}</td>
-                                </tr>
-                              );
-
-                              if (firstProjectRow && idx === subtasks.length - 1) {
-                                firstProjectRow = false;
-                              }
-
-                              return row;
+                        {Object.entries(projects).map(
+                          ([projectTitle, tasks]) => {
+                            let projectRowSpan = 0;
+                            Object.values(tasks).forEach((subtaskList) => {
+                              projectRowSpan += subtaskList.length;
                             });
-                          });
-                        })}
+
+                            let firstProjectRow = true;
+
+                            return Object.entries(tasks).map(
+                              ([taskTitle, subtasks]) => {
+                                let taskRowSpan = subtasks.length;
+
+                                return subtasks.map((subtask, idx) => {
+                                  const row = (
+                                    <tr
+                                      key={`${employeeName}-${projectTitle}-${taskTitle}-${idx}`}
+                                    >
+                                      {firstProjectRow && idx === 0 && (
+                                        <td
+                                          rowSpan={projectRowSpan}
+                                          className="align-middle fw-semibold"
+                                        >
+                                          {projectTitle}
+                                        </td>
+                                      )}
+                                      {idx === 0 && (
+                                        <td
+                                          rowSpan={taskRowSpan}
+                                          className="align-middle"
+                                        >
+                                          {taskTitle}
+                                        </td>
+                                      )}
+                                      <td>{subtask.subtaskTitle}</td>
+                                      <td>{subtask.status}</td>
+                                    </tr>
+                                  );
+
+                                  if (
+                                    firstProjectRow &&
+                                    idx === subtasks.length - 1
+                                  ) {
+                                    firstProjectRow = false;
+                                  }
+
+                                  return row;
+                                });
+                              }
+                            );
+                          }
+                        )}
                       </tbody>
                     </table>
                   </div>
