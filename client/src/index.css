@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary-rgb: 243 244 246; /* gray-100 */
+  --bg-secondary-rgb: 255 255 255; /* white */
+  --bg-tertiary-rgb: 229 231 235; /* gray-200 */
+  --text-primary-rgb: 17 24 39; /* gray-900 */
+  --text-secondary-rgb: 107 114 128; /* gray-500 */
+  --accent-primary-rgb: 79 70 229; /* indigo-600 */
+  --accent-primary-hover-rgb: 67 56 202; /* indigo-700 */
+  --border-color-rgb: 229 231 235; /* gray-200 */
+  
+  --sidebar-width: 280px;
+  --sidebar-width-collapsed: 90px;
+}
+
+.dark {
+  --bg-primary-rgb: 17 24 39; /* gray-900 */
+  --bg-secondary-rgb: 31 41 55; /* gray-800 */
+  --bg-tertiary-rgb: 55 65 81; /* gray-700 */
+  --text-primary-rgb: 243 244 246; /* gray-100 */
+  --text-secondary-rgb: 156 163 175; /* gray-400 */
+  --accent-primary-rgb: 99 102 241; /* indigo-500 */
+  --accent-primary-hover-rgb: 129 140 248; /* indigo-400 */
+  --border-color-rgb: 55 65 81; /* gray-700 */
+}
+
+body {
+  background-color: rgb(var(--bg-primary-rgb));
+}

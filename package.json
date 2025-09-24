@@ -1,0 +1,24 @@
+{
+  "name": "project-tracker",
+  "version": "1.0.0",
+  "description": "🏢 1. Multi-Role User Management",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start" : "concurrently \"cd server && nodemon server.ts\" \"cd client && npm run dev\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sahej98/Project-Tracker.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Sahej98/Project-Tracker/issues"
+  },
+  "homepage": "https://github.com/Sahej98/Project-Tracker#readme",
+  "dependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
