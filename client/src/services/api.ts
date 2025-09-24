@@ -2,7 +2,7 @@ import axios from 'axios';
 import type { Project, ProjectFile, User, Role, TaskStatus, LeaveRequestStatus } from '../types';
 
 const api = axios.create({
-    baseURL: 'http://localhost:4000/api',
+    baseURL: 'https://project-tracker-ey5v.onrender.com/api',
 });
 
 // --- General ---
