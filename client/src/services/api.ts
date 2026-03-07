@@ -9,7 +9,7 @@ import type {
 } from '../types';
 
 const api = axios.create({
-  baseURL: 'https://zenith-wzma.onrender.com/api',
+  baseURL: 'https://zenith-6gvo.onrender.com/api',
 });
 
 // --- General ---
